@@ -444,9 +444,8 @@ function startFormDraft(key, fieldIds, opts){
   if(body._draftHandler)body.removeEventListener('input',body._draftHandler);
   if(body._draftChange)body.removeEventListener('change',body._draftChange);
   const save=()=>saveCurrentFormDraft();
-  // Debounce on input to limit writes
-  let t;
-  const debounced=()=>{clearTimeout(t);t=setTimeout(save,250);};
+  // Debounce on input to limit writes — store on window so pagehide flush can fire it
+  const debounced=()=>{clearTimeout(window._draftDebounce);window._draftDebounce=setTimeout(()=>{window._draftDebounce=null;save();},250);};
   body._draftHandler=debounced;
   body._draftChange=save;
   body.addEventListener('input',debounced);
@@ -534,15 +533,23 @@ function offerDraftRestore(key,label){
   });
 }
 
-// Save form drafts and flush sync when page is being backgrounded (Android tab-switch / kill)
+// Flush any pending DEBOUNCED draft save immediately (before pagehide tears down DOM values)
+function flushPendingDraft(){
+  if(window._draftDebounce){clearTimeout(window._draftDebounce);window._draftDebounce=null;saveCurrentFormDraft();}
+}
+
+// Save form drafts and flush sync when page is being backgrounded (Android tab-switch / kill).
+// IMPORTANT: pagehide fires AFTER browser starts resetting inputs to defaults. So we only
+// re-read fields on visibilitychange→hidden (DOM still alive); on pagehide/beforeunload we
+// just flush the *debounced* draft that already captured live values.
 document.addEventListener('visibilitychange',()=>{
   if(document.visibilityState==='hidden'){
-    saveCurrentFormDraft();
+    flushPendingDraft();
     flushPendingSync();
   }
 });
-window.addEventListener('pagehide',()=>{saveCurrentFormDraft();flushPendingSync();});
-window.addEventListener('beforeunload',()=>{saveCurrentFormDraft();flushPendingSync();});
+window.addEventListener('pagehide',()=>{flushPendingDraft();flushPendingSync();});
+window.addEventListener('beforeunload',()=>{flushPendingDraft();flushPendingSync();});
 
 // ===== FIREBASE (shared with OctoCRM project, separate AmwayCRM data node) =====
 const FB_CFG={apiKey:"AIzaSyCSQAS7mFBlTfmz0FVWaSLgI-Puk1Y3sN4",authDomain:"octocrm1.firebaseapp.com",databaseURL:"https://octocrm1-default-rtdb.asia-southeast1.firebasedatabase.app",projectId:"octocrm1",storageBucket:"octocrm1.firebasestorage.app",messagingSenderId:"212247591529",appId:"1:212247591529:web:4a076e40a71b59646b00f8"};
@@ -870,7 +877,16 @@ document.getElementById('sbOverlay').addEventListener('click',closeSidebar);
 // ===== MODAL =====
 function openModal(title,body,foot){document.getElementById('moTitle').textContent=title;document.getElementById('moBody').innerHTML=body;document.getElementById('moFoot').innerHTML=foot||'<button class="btn btn-s" onclick="closeModal()">Close</button>';document.getElementById('modal').classList.add('open');}
 function closeModal(){document.getElementById('modal').classList.remove('open');}
-document.getElementById('modal').addEventListener('click',e=>{if(e.target.id==='modal')closeModal();});
+// Backdrop tap-to-close: only fire when the press AND release both happened on the backdrop.
+// Without this guard, a long-press text selection that drags off the input lifts on the
+// backdrop and the synthetic click closes the modal (Android quirk).
+(function(){
+  const m=document.getElementById('modal');
+  let downOnBackdrop=false;
+  m.addEventListener('mousedown',e=>{downOnBackdrop=(e.target===m);});
+  m.addEventListener('touchstart',e=>{downOnBackdrop=(e.target===m);},{passive:true});
+  m.addEventListener('click',e=>{if(downOnBackdrop&&e.target===m)closeModal();downOnBackdrop=false;});
+})();
 
 // ===== COUNTS =====
 function updCounts(){
