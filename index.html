@@ -1,0 +1,1928 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no,interactive-widget=resizes-content,viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#fef2f2">
+<title>AmwayCare CRM — Service & Parts</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#fef7f7;--bg2:#ffffff;--card:#ffffff;--input:#fdf6f6;
+  --bdr:#f1d6d6;--bdr2:#e8b8b8;
+  --t1:#1a0a0a;--t2:#5a3838;--t3:#a08080;
+  --ac:#dc2626;--ac2:#b91c1c;--acs:rgba(220,38,38,.08);
+  --ok:#059669;--oks:rgba(5,150,105,.08);
+  --wn:#d97706;--wns:rgba(217,119,6,.08);
+  --er:#dc2626;--ers:rgba(220,38,38,.08);
+  --pu:#7c3aed;--pus:rgba(124,58,237,.08);
+  --tl:#0891b2;--tls:rgba(8,145,178,.08);
+  --wa:#25d366;--was:rgba(37,211,102,.1);
+  --gd:#b8860b;--gds:rgba(184,134,11,.1);
+  --r:12px;--rl:16px;
+  --sh:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.06);
+  --sh2:0 4px 12px rgba(0,0,0,.1);
+  --tr:.15s ease;
+  --fs:16px;--fs-sm:14px;--fs-xs:12px;--fs-lg:18px;--fs-xl:22px;--fs-h:28px;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:rgba(220,38,38,.1)}
+html{height:100%;overflow-x:hidden;overscroll-behavior:none}
+body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--t1);min-height:100vh;min-height:100dvh;overflow-x:hidden;font-size:var(--fs);-webkit-text-size-adjust:100%;text-size-adjust:100%;line-height:1.5}
+button,input,textarea{font-family:inherit;border-radius:0}
+button,input[type="text"],input[type="password"],input[type="email"],input[type="tel"],input[type="date"],input[type="time"],input[type="number"],input[type="search"],input[type="url"],textarea{-webkit-appearance:none;appearance:none}
+input[type="checkbox"],input[type="radio"]{-webkit-appearance:checkbox;appearance:checkbox}
+svg{overflow:visible}
+select{font-family:inherit}
+a,button,input,select,textarea{touch-action:manipulation}
+
+/* ===== LOGIN ===== */
+.login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;min-height:100dvh;padding:24px;padding-top:max(24px,env(safe-area-inset-top,24px));background:linear-gradient(135deg,#fee2e2,#fef7f7,#fef3c7)}
+.login-box{background:#fff;border-radius:20px;box-shadow:var(--sh2);padding:40px 32px;width:100%;max-width:400px;text-align:center}
+.login-box .logo-lg{width:64px;height:64px;background:linear-gradient(135deg,var(--ac),var(--gd));border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:28px;color:#fff;margin:0 auto 16px;font-weight:800}
+.login-box h1{font-size:var(--fs-h);font-weight:800;margin-bottom:4px;color:var(--t1)}
+.login-box p{color:var(--t2);font-size:var(--fs-sm);margin-bottom:28px}
+.login-err{background:var(--ers);color:var(--er);padding:10px 14px;border-radius:var(--r);font-size:var(--fs-sm);margin-bottom:16px;display:none}
+
+/* ===== APP LAYOUT ===== */
+.app{display:none;min-height:100vh}
+.app.show{display:flex}
+
+/* ===== SIDEBAR ===== */
+.sb{width:260px;background:var(--bg2);border-right:1px solid var(--bdr);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:200;transition:transform var(--tr);box-shadow:var(--sh);overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain}
+.sb-brand{padding:20px;padding-top:max(20px,env(safe-area-inset-top,20px));border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:12px}
+.sb-brand .logo{width:38px;height:38px;background:linear-gradient(135deg,var(--ac),var(--gd));border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff;font-weight:800}
+.sb-brand h1{font-size:var(--fs-lg);font-weight:800;color:var(--t1)}
+.sb-brand span{font-size:11px;color:var(--t3);display:block;margin-top:1px}
+.ns{padding:20px 16px 8px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--t3)}
+.ni{display:flex;align-items:center;gap:12px;padding:12px 16px;margin:2px 8px;border-radius:var(--r);cursor:pointer;transition:all var(--tr);font-size:var(--fs);font-weight:500;color:var(--t2);position:relative;background:none;border:none;width:calc(100% - 16px);text-align:left;font-family:inherit;appearance:none;outline:none;min-height:48px}
+.ni:active{background:var(--acs)}.ni.active{background:var(--acs);color:var(--ac);font-weight:600}
+.ni.active::before{content:'';position:absolute;left:-8px;top:10px;bottom:10px;width:3px;background:var(--ac);border-radius:0 3px 3px 0}
+.ni svg{width:20px;height:20px;flex-shrink:0;stroke:var(--t2);fill:none;stroke-width:2}
+.ni.active svg{stroke:var(--ac)}
+.nb{margin-left:auto;background:var(--ac);color:#fff;font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px}
+.nbw{margin-left:auto;background:var(--wn);color:#fff;font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px}
+.nbe{margin-left:auto;background:var(--er);color:#fff;font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px}
+.sb-foot{margin-top:auto;padding:16px;border-top:1px solid var(--bdr)}
+.sb-user{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.sb-user-av{width:36px;height:36px;border-radius:50%;background:var(--acs);display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--ac);font-size:var(--fs-sm)}
+.sb-user-info{flex:1}
+.sb-user-name{font-weight:600;font-size:var(--fs-sm);color:var(--t1)}
+.sb-user-role{font-size:var(--fs-xs);color:var(--t3)}
+
+/* ===== MAIN ===== */
+.mn{margin-left:260px;flex:1;min-height:100vh;overflow-x:hidden;max-width:100%}
+.tb{height:auto;min-height:64px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;padding:0 24px;padding-top:env(safe-area-inset-top,0px);background:var(--bg2);position:sticky;top:0;z-index:50;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.tb-t{font-size:var(--fs-xl);font-weight:700}
+.tb-a{display:flex;gap:8px;align-items:center}
+.ct{padding:24px}
+
+/* ===== BUTTONS ===== */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 20px;border-radius:var(--r);border:1px solid transparent;font-size:var(--fs-sm);font-weight:600;cursor:pointer;transition:all var(--tr);white-space:nowrap;min-height:44px;font-family:inherit}
+.btn svg{width:18px;height:18px}
+.btn-p{background:var(--ac);color:#fff;border-color:var(--ac);box-shadow:0 1px 3px rgba(220,38,38,.3)}.btn-p:active{background:var(--ac2)}
+.btn-s{background:var(--bg2);color:var(--t2);border-color:var(--bdr)}.btn-s:active{background:var(--bg)}
+.btn-d{background:var(--ers);color:var(--er);border-color:transparent}.btn-d:active{background:var(--er);color:#fff}
+.btn-ok{background:var(--ok);color:#fff;box-shadow:0 1px 3px rgba(5,150,105,.3)}.btn-ok:active{opacity:.9}
+.btn-wa{background:var(--wa);color:#fff;box-shadow:0 1px 3px rgba(37,211,102,.3)}.btn-wa:active{opacity:.9}
+.btn-gd{background:var(--gd);color:#fff;box-shadow:0 1px 3px rgba(184,134,11,.3)}.btn-gd:active{opacity:.9}
+.btn-sm{padding:8px 14px;font-size:var(--fs-xs);min-height:38px}
+.btn-i{width:44px;height:44px;padding:0;display:flex;align-items:center;justify-content:center;border-radius:var(--r);border:1px solid var(--bdr);background:var(--bg2);color:var(--t2);cursor:pointer;transition:all var(--tr)}.btn-i:active{background:var(--bg)}
+.btn-i svg{width:20px;height:20px;flex-shrink:0;stroke:var(--t2);fill:none;stroke-width:2}
+
+/* ===== STATS ===== */
+.sg{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:24px}
+.sc{background:var(--card);border:1px solid var(--bdr);border-radius:var(--rl);padding:20px;box-shadow:var(--sh);transition:all var(--tr)}
+.sc .si{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;margin-bottom:12px}.sc .si svg{width:22px;height:22px}
+.sc .sv{font-size:var(--fs-h);font-weight:800;margin-bottom:2px}
+.sc .sl{font-size:var(--fs-sm);color:var(--t2);font-weight:500}
+
+/* ===== TABLE WRAPPER ===== */
+.tw{background:var(--card);border:1px solid var(--bdr);border-radius:var(--rl);overflow:hidden;box-shadow:var(--sh);max-width:100%;margin-bottom:16px}
+.th{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--bdr);flex-wrap:wrap;gap:10px}
+.th h3{font-size:var(--fs-lg);font-weight:700}
+.sx{position:relative}.sx input{background:var(--input);border:1px solid var(--bdr);border-radius:var(--r);padding:10px 14px 10px 40px;color:var(--t1);font-size:var(--fs);width:260px;transition:border-color var(--tr);min-height:44px}
+.sx input:focus{outline:none;border-color:var(--ac)}.sx input::placeholder{color:var(--t3)}
+.sx svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:18px;height:18px;color:var(--t3)}
+
+/* ===== BADGES ===== */
+.bd{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:8px;font-size:var(--fs-xs);font-weight:600}
+.bd-ok{background:var(--oks);color:var(--ok)}.bd-wn{background:var(--wns);color:var(--wn)}.bd-er{background:var(--ers);color:var(--er)}
+.bd-ac{background:var(--acs);color:var(--ac)}.bd-pu{background:var(--pus);color:var(--pu)}.bd-tl{background:var(--tls);color:var(--tl)}
+.bd-gd{background:var(--gds);color:var(--gd)}
+.dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+
+/* ===== FORMS ===== */
+.fg{margin-bottom:16px}.fg label{display:block;font-size:var(--fs-sm);font-weight:600;color:var(--t2);margin-bottom:6px}
+.fc{width:100%;background:var(--input);border:1px solid var(--bdr);border-radius:var(--r);padding:12px 16px;color:var(--t1);font-size:var(--fs);transition:border-color var(--tr);line-height:1.5;min-height:48px}
+.fc:focus{outline:none;border-color:var(--ac);box-shadow:0 0 0 3px rgba(220,38,38,.1)}
+.fc::placeholder{color:var(--t3)}
+textarea.fc{min-height:100px;resize:vertical}
+select.fc{appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23a08080' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:40px}
+.fr{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.fr3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+
+/* ===== MODALS ===== */
+.mo{display:none;position:fixed;inset:0;background:rgba(0,0,0,.3);backdrop-filter:blur(4px);z-index:1000;align-items:center;justify-content:center;padding:16px}.mo.open{display:flex}
+.ml{background:var(--bg2);border:1px solid var(--bdr);border-radius:20px;width:100%;max-width:720px;max-height:88vh;overflow-y:auto;box-shadow:var(--sh2);animation:mIn .2s ease}
+@keyframes mIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.mh{display:flex;align-items:center;justify-content:space-between;padding:20px 24px;padding-top:max(20px,env(safe-area-inset-top,20px));border-bottom:1px solid var(--bdr)}.mh h2{font-size:var(--fs-xl);font-weight:700}
+.mb{padding:24px}.mf{padding:16px 24px;border-top:1px solid var(--bdr);display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap}
+.mc{background:none;border:none;font-size:24px;color:var(--t3);cursor:pointer;padding:8px;line-height:1}
+
+/* ===== CARDS (mobile) ===== */
+.rpt-card{padding:16px 20px;border-bottom:1px solid var(--bdr);overflow:hidden}
+.rpt-card:last-child{border-bottom:none}
+.rpt-card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;gap:8px}
+.rpt-card-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:var(--fs-sm);gap:8px}
+.rpt-card-row .rc-label{color:var(--t3);font-weight:500;flex-shrink:0}
+.rpt-card-row .rc-val{color:var(--t1);font-weight:500;text-align:right;overflow:hidden;text-overflow:ellipsis;word-break:break-word;min-width:0}
+.rpt-card-actions{display:flex;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid var(--bdr);flex-wrap:wrap}
+
+/* ===== PARTS GRID ===== */
+.parts-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+.part-card{background:var(--card);border:1px solid var(--bdr);border-radius:var(--rl);overflow:hidden;box-shadow:var(--sh);transition:all var(--tr);cursor:pointer}
+.part-card:active{transform:scale(.98)}
+.part-photo{aspect-ratio:1;background:var(--input);display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative}
+.part-photo img{width:100%;height:100%;object-fit:cover}
+.part-photo .ph-ph{font-size:48px;color:var(--bdr2)}
+.part-info{padding:14px}
+.part-info h4{font-size:var(--fs-sm);font-weight:700;margin-bottom:4px;color:var(--t1);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.part-info .pn{font-size:var(--fs-xs);color:var(--t3);margin-bottom:8px;font-family:'Courier New',monospace}
+.part-info .pp{font-size:var(--fs);font-weight:700;color:var(--ac);margin-bottom:6px}
+.part-stock{display:flex;justify-content:space-between;align-items:center;font-size:var(--fs-xs);color:var(--t2)}
+.part-card.low-stock{border-color:var(--wn)}
+.part-card.out-stock{border-color:var(--er);opacity:.7}
+
+/* ===== FILTER CHIPS ===== */
+.fc-chip{padding:8px 16px;border-radius:24px;font-size:var(--fs-sm);font-weight:600;cursor:pointer;border:1px solid var(--bdr);background:var(--bg2);color:var(--t2);transition:all var(--tr);font-family:inherit;appearance:none;outline:none;min-height:40px}
+.fc-chip:active{background:var(--acs)}.fc-chip.active{background:var(--ac);color:#fff;border-color:var(--ac)}
+
+/* ===== CALENDAR ===== */
+.cg{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.ch-h{text-align:center;font-size:var(--fs-xs);font-weight:700;color:var(--t3);padding:8px}
+.cd{min-height:84px;background:var(--bg2);border:1px solid var(--bdr);border-radius:8px;padding:6px;font-size:var(--fs-xs);cursor:pointer}
+.cd.today{border-color:var(--ac);background:var(--acs)}
+.cd.om{opacity:.3}
+.cd .dn{font-weight:700;font-size:var(--fs-sm);margin-bottom:2px}
+.ce{font-size:10px;padding:2px 4px;border-radius:4px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* ===== TOAST ===== */
+.tc-c{position:fixed;top:max(80px,calc(env(safe-area-inset-top,0px) + 70px));right:max(24px,env(safe-area-inset-right,24px));z-index:2000;display:flex;flex-direction:column;gap:8px}
+.ts{background:var(--bg2);border:1px solid var(--bdr);border-radius:var(--rl);padding:14px 20px;font-size:var(--fs-sm);display:flex;align-items:center;gap:10px;box-shadow:var(--sh2);animation:tsIn .3s ease;min-width:280px}
+.ts.success{border-left:4px solid var(--ok)}.ts.error{border-left:4px solid var(--er)}.ts.info{border-left:4px solid var(--ac)}
+@keyframes tsIn{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:translateX(0)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ===== EMPTY STATE ===== */
+.es{padding:40px 20px;text-align:center;color:var(--t3)}
+.es svg{width:48px;height:48px;margin-bottom:12px;color:var(--bdr2)}
+
+/* ===== INFO BOX ===== */
+.oc{background:var(--card);border:1px solid var(--bdr);border-radius:var(--rl);padding:20px;margin-bottom:16px;box-shadow:var(--sh)}
+.oc h3{font-size:var(--fs-lg);font-weight:700;margin-bottom:8px}
+.oc p{font-size:var(--fs-sm);color:var(--t2)}
+
+/* ===== WARRANTY BANNER ===== */
+.warr-banner{padding:12px 16px;border-radius:var(--r);margin-bottom:12px;font-size:var(--fs-sm);font-weight:500;display:flex;align-items:center;gap:10px}
+.warr-banner.in{background:var(--oks);color:var(--ok);border:1px solid rgba(5,150,105,.2)}
+.warr-banner.out{background:var(--ers);color:var(--er);border:1px solid rgba(220,38,38,.2)}
+.warr-banner.exp{background:var(--wns);color:var(--wn);border:1px solid rgba(217,119,6,.2)}
+
+/* ===== PHOTO ===== */
+.photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:10px;margin-top:12px}
+.photo-thumb{position:relative;border-radius:var(--r);overflow:hidden;aspect-ratio:1;background:var(--input);border:1px solid var(--bdr)}
+.photo-thumb img{width:100%;height:100%;object-fit:cover}
+.photo-thumb .photo-del{position:absolute;top:4px;right:4px;width:28px;height:28px;border-radius:50%;background:rgba(0,0,0,.6);color:#fff;border:none;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+
+/* ===== MOBILE ===== */
+.sb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:150}.sb-overlay.show{display:block}
+.mob-tg{display:none}
+.mob-nav{display:none}
+@media(max-width:900px){
+  .sb{transform:translateX(-100%)}.sb.mopen{transform:translateX(0)}
+  .mn{margin-left:0}
+  .mob-tg{display:flex}
+  .sx input{width:100%}
+  .fr,.fr3{grid-template-columns:1fr}
+  .sg{grid-template-columns:repeat(2,1fr)}
+  .ct{padding:16px;padding-bottom:80px}
+  .mob-nav{display:flex;position:fixed;bottom:0;left:0;right:0;background:var(--bg2);border-top:1px solid var(--bdr);z-index:100;padding:8px 4px;padding-bottom:max(8px,env(safe-area-inset-bottom,8px));justify-content:space-around}
+  .mob-tab{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 8px;border:none;background:none;cursor:pointer;color:var(--t3);font-size:10px;font-weight:600;flex:1;min-height:48px;font-family:inherit}
+  .mob-tab svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2}
+  .mob-tab.active{color:var(--ac)}
+  .ce{font-size:9px}
+  .cd{min-height:60px;padding:4px}
+}
+
+/* ===== UTILITIES ===== */
+.flex-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.text-c{text-align:center}
+.text-r{text-align:right}
+.muted{color:var(--t3)}
+.scrollx{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.scrollx table{min-width:600px}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;padding:10px 14px;font-size:var(--fs-xs);font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--t3);border-bottom:1px solid var(--bdr);background:var(--input)}
+td{padding:12px 14px;font-size:var(--fs-sm);border-bottom:1px solid var(--bdr);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+
+/* Sync indicator */
+.sync-pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:20px;background:var(--oks);color:var(--ok);font-size:var(--fs-xs);font-weight:600;cursor:pointer;border:none;font-family:inherit;transition:all var(--tr)}
+.sync-pill .dot{width:8px;height:8px;border-radius:50%;background:currentColor;animation:pulse 2s infinite}
+.sync-pill.offline{background:var(--ers);color:var(--er)}
+.sync-pill.syncing{background:var(--wns);color:var(--wn)}
+.sync-pill.local{background:rgba(160,128,128,.15);color:var(--t3)}
+.sync-pill.local .dot{animation:none}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+</style>
+</head>
+<body>
+
+<!-- ===== LOGIN ===== -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-box">
+    <div class="logo-lg">A</div>
+    <h1>AmwayCare CRM</h1>
+    <p>Service & Parts Management</p>
+    <div class="login-err" id="loginErr"></div>
+    <div class="fg"><input class="fc" id="lUser" placeholder="Username" autocomplete="username"></div>
+    <div class="fg"><input class="fc" type="password" id="lPass" placeholder="Password" autocomplete="current-password"></div>
+    <button class="btn btn-p" style="width:100%;margin-top:8px" onclick="doLogin()">Sign In</button>
+    <p style="margin-top:20px;font-size:11px">Default: <strong>admin / admin</strong></p>
+  </div>
+</div>
+
+<!-- ===== APP ===== -->
+<div class="app" id="app">
+  <!-- Sidebar -->
+  <aside class="sb" id="sidebar">
+    <div class="sb-brand">
+      <div class="logo">A</div>
+      <div><h1>AmwayCare</h1><span>Service & Parts CRM</span></div>
+    </div>
+    <div class="ns">Main</div>
+    <button class="ni active" data-page="dashboard" onclick="showPage('dashboard')">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>Dashboard</button>
+    <button class="ni" data-page="jobs" onclick="showPage('jobs')">
+      <svg viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>Jobs<span class="nbw" id="jobCt">0</span></button>
+    <button class="ni" data-page="reports" onclick="showPage('reports')">
+      <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>Service Reports<span class="nb" id="repCt">0</span></button>
+    <button class="ni" data-page="customers" onclick="showPage('customers')">
+      <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Customers</button>
+    <button class="ni" data-page="appliances" onclick="showPage('appliances')">
+      <svg viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M4 10h16"/><circle cx="12" cy="6" r="1"/></svg>Appliances</button>
+    <div class="ns">Inventory</div>
+    <button class="ni" data-page="parts" onclick="showPage('parts')">
+      <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>Spare Parts<span class="nbe" id="partCt" style="display:none">0</span></button>
+    <button class="ni" data-page="part-changes" onclick="showPage('part-changes')">
+      <svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/><path d="M12 8v4l2 2"/></svg>Part Changes</button>
+    <div class="ns">Schedule</div>
+    <button class="ni" data-page="calendar" onclick="showPage('calendar')">
+      <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Shared Calendar</button>
+    <button class="ni" data-page="technicians" onclick="showPage('technicians')" id="navTech">
+      <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Technicians</button>
+    <div class="ns">Settings</div>
+    <button class="ni" data-page="users" onclick="showPage('users')" id="navUsers">
+      <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>Users</button>
+    <button class="ni" data-page="data" onclick="showPage('data')">
+      <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Data Backup</button>
+
+    <div class="sb-foot">
+      <div class="sb-user">
+        <div class="sb-user-av" id="sbUAv">A</div>
+        <div class="sb-user-info">
+          <div class="sb-user-name" id="sbUName">Admin</div>
+          <div class="sb-user-role" id="sbURole">Admin</div>
+        </div>
+      </div>
+      <button class="btn btn-s btn-sm" style="width:100%" onclick="doLogout()">Sign Out</button>
+    </div>
+  </aside>
+  <div class="sb-overlay" id="sbOverlay"></div>
+
+  <!-- Main -->
+  <main class="mn">
+    <div class="tb">
+      <div style="display:flex;align-items:center;gap:12px">
+        <button class="btn-i mob-tg" onclick="toggleSidebar()" aria-label="Menu">
+          <svg viewBox="0 0 24 24"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+        </button>
+        <div class="tb-t" id="pageTitle">Dashboard</div>
+      </div>
+      <div class="tb-a">
+        <span class="sync-pill" id="syncStatus" title="Calendar shared with field service team"><span class="dot"></span><span style="display:none" class="sync-text">Shared</span></span>
+      </div>
+    </div>
+
+    <div class="ct">
+      <div class="pg active" id="page-dashboard"><div id="dashContent"></div></div>
+      <div class="pg" id="page-jobs" style="display:none"><div id="jobsContent"></div></div>
+      <div class="pg" id="page-reports" style="display:none"><div id="reportsContent"></div></div>
+      <div class="pg" id="page-customers" style="display:none"><div id="customersContent"></div></div>
+      <div class="pg" id="page-appliances" style="display:none"><div id="appliancesContent"></div></div>
+      <div class="pg" id="page-parts" style="display:none"><div id="partsContent"></div></div>
+      <div class="pg" id="page-part-changes" style="display:none"><div id="partChangesContent"></div></div>
+      <div class="pg" id="page-calendar" style="display:none"><div id="calContent"></div></div>
+      <div class="pg" id="page-technicians" style="display:none"><div id="techContent"></div></div>
+      <div class="pg" id="page-users" style="display:none"><div id="usersContent"></div></div>
+      <div class="pg" id="page-data" style="display:none"><div id="dataContent"></div></div>
+    </div>
+  </main>
+</div>
+
+<!-- Mobile bottom nav -->
+<div class="mob-nav" id="mobNav">
+  <button class="mob-tab active" data-mp="dashboard" onclick="mobNav('dashboard')"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>Home</button>
+  <button class="mob-tab" data-mp="jobs" onclick="mobNav('jobs')"><svg viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>Jobs</button>
+  <button class="mob-tab" data-mp="parts" onclick="mobNav('parts')"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/></svg>Parts</button>
+  <button class="mob-tab" data-mp="customers" onclick="mobNav('customers')"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Custs</button>
+  <button class="mob-tab" data-mp="calendar" onclick="mobNav('calendar')"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Cal</button>
+</div>
+
+<!-- Modal -->
+<div class="mo" id="modal">
+  <div class="ml">
+    <div class="mh"><h2 id="moTitle">Title</h2><button class="mc" onclick="closeModal()">×</button></div>
+    <div class="mb" id="moBody"></div>
+    <div class="mf" id="moFoot"></div>
+  </div>
+</div>
+
+<!-- Toasts -->
+<div class="tc-c" id="toasts"></div>
+
+<script>
+// ===== UTILS =====
+const E=s=>{if(s===null||s===undefined)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');};
+const todayISO=()=>new Date().toISOString().split('T')[0];
+function addDays(dateStr,days){const d=new Date(dateStr);d.setDate(d.getDate()+days);return d.toISOString().split('T')[0];}
+function diffDays(d1,d2){return Math.floor((new Date(d2)-new Date(d1))/(1000*60*60*24));}
+function fmtMoney(v){const n=parseFloat(v||0);return'$'+n.toFixed(2);}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).substring(2,8);}
+
+// ===== TOAST =====
+function toast(msg,type){
+  const el=document.createElement('div');
+  el.className='ts '+(type||'info');
+  el.innerHTML=E(msg);
+  document.getElementById('toasts').appendChild(el);
+  setTimeout(()=>{el.style.opacity='0';el.style.transform='translateX(40px)';setTimeout(()=>el.remove(),300);},2800);
+}
+
+// ===== DB =====
+const DB_KEY='amwayCRM_v1';
+const SHARED_CAL_KEY='sharedFieldServiceCal_v1';
+let DB={
+  custs:[],appliances:[],reports:[],jobs:[],parts:[],partChanges:[],
+  techs:[],users:[],
+  nextIds:{c:1,a:1,r:1,j:1,p:1,pc:1,t:1,u:1},
+  // Default warranty for parts when out of warranty
+  defaultPartWarrantyDays:365 // 1 year default
+};
+let CUR_USER=null;
+
+function loadDB(){
+  try{
+    const s=localStorage.getItem(DB_KEY);
+    if(s){DB={...DB,...JSON.parse(s)};}
+    if(!DB.users||!DB.users.length){
+      DB.users=[
+        {id:1,name:'Administrator',username:'admin',password:'admin',role:'admin'},
+        {id:2,name:'Manager',username:'manager',password:'manager',role:'manager'},
+        {id:3,name:'Technician',username:'tech',password:'tech',role:'technician'}
+      ];
+      DB.nextIds.u=4;
+    }
+    // seed sample data on first load
+    if(!DB.custs.length&&!DB.parts.length){seedSample();}
+  }catch(e){console.error(e);}
+}
+function saveDB(){
+  // Stamp each table's records with a modification time so cloud merges are deterministic
+  const now=Date.now();
+  if(window._touchedTables){
+    window._touchedTables.forEach(k=>{
+      if(Array.isArray(DB[k])){
+        DB[k].forEach(item=>{if(item&&!item._modifiedAt)item._modifiedAt=now;});
+      }
+    });
+    window._touchedTables=null;
+  }
+  DB._modifiedAt=now;
+  try{localStorage.setItem(DB_KEY,JSON.stringify(DB));}catch(e){toast('Storage error: '+e.message,'error');}
+  publishCalendarToShared();
+  // Push our own DB to cloud (debounced, but short so phone backgrounding doesn't lose it)
+  clearTimeout(window._fbSaveTimer);
+  window._fbSaveTimer=setTimeout(()=>syncDBToCloud(),300);
+}
+
+// Force any pending Firebase push to fire immediately (used when page is being hidden)
+function flushPendingSync(){
+  if(window._fbSaveTimer){clearTimeout(window._fbSaveTimer);window._fbSaveTimer=null;syncDBToCloud();}
+}
+
+// Mark a table as touched so saveDB stamps a fresh _modifiedAt on its rows
+function markTouched(table){
+  if(!window._touchedTables)window._touchedTables=new Set();
+  window._touchedTables.add(table);
+}
+
+// ===== FORM DRAFTS — survive Android tab-switch, app-kill, accidental reload =====
+// Every modal can register itself with a draft key. On every keystroke, the form's
+// current field values are saved to localStorage. If the page is closed/killed
+// before the user clicks Save, the draft is restored on next open.
+const DRAFT_PREFIX='amwayCRM_draft_';
+let _activeDraft=null; // { key, fields:[ids], excludeFields:[ids], onRestore }
+
+function startFormDraft(key, fieldIds, opts){
+  _activeDraft={key, fields:fieldIds, exclude:(opts&&opts.exclude)||[]};
+  // Auto-save on every input change inside the modal
+  const body=document.getElementById('moBody');
+  if(!body)return;
+  if(body._draftHandler)body.removeEventListener('input',body._draftHandler);
+  if(body._draftChange)body.removeEventListener('change',body._draftChange);
+  const save=()=>saveCurrentFormDraft();
+  // Debounce on input to limit writes
+  let t;
+  const debounced=()=>{clearTimeout(t);t=setTimeout(save,250);};
+  body._draftHandler=debounced;
+  body._draftChange=save;
+  body.addEventListener('input',debounced);
+  body.addEventListener('change',save);
+}
+function saveCurrentFormDraft(){
+  if(!_activeDraft)return;
+  try{
+    const data={};
+    _activeDraft.fields.forEach(id=>{
+      const el=document.getElementById(id);
+      if(!el)return;
+      if(_activeDraft.exclude.includes(id))return;
+      if(el.type==='checkbox'||el.type==='radio')data[id]=el.checked;
+      else data[id]=el.value;
+    });
+    // Also save checkbox groups (technicians)
+    const groups=document.querySelectorAll('#moBody [data-draft-group]');
+    groups.forEach(g=>{
+      const name=g.dataset.draftGroup;
+      const checked=[...g.querySelectorAll('input[type=checkbox]:checked')].map(c=>c.value);
+      data['__group_'+name]=checked;
+    });
+    // Save extra state (e.g. reportParts)
+    if(window._reportParts)data.__reportParts=window._reportParts;
+    data.__savedAt=Date.now();
+    localStorage.setItem(DRAFT_PREFIX+_activeDraft.key,JSON.stringify(data));
+  }catch(e){console.warn('draft save:',e);}
+}
+function getFormDraft(key){
+  try{
+    const raw=localStorage.getItem(DRAFT_PREFIX+key);
+    if(!raw)return null;
+    return JSON.parse(raw);
+  }catch(e){return null;}
+}
+function clearFormDraft(key){
+  try{localStorage.removeItem(DRAFT_PREFIX+key);}catch(e){}
+}
+function endFormDraft(){_activeDraft=null;}
+function listFormDrafts(){
+  const out=[];
+  try{
+    for(let i=0;i<localStorage.length;i++){
+      const k=localStorage.key(i);
+      if(k&&k.startsWith(DRAFT_PREFIX)){
+        const v=localStorage.getItem(k);
+        try{const d=JSON.parse(v);out.push({key:k.replace(DRAFT_PREFIX,''),savedAt:d.__savedAt,data:d});}catch(e){}
+      }
+    }
+  }catch(e){}
+  return out;
+}
+// Restore form fields from a draft object
+function applyFormDraft(draft){
+  if(!draft)return;
+  Object.keys(draft).forEach(id=>{
+    if(id.startsWith('__'))return;
+    const el=document.getElementById(id);
+    if(!el)return;
+    if(el.type==='checkbox'||el.type==='radio')el.checked=!!draft[id];
+    else el.value=draft[id];
+  });
+  // Restore checkbox groups
+  Object.keys(draft).forEach(k=>{
+    if(!k.startsWith('__group_'))return;
+    const name=k.replace('__group_','');
+    const grp=document.querySelector(`#moBody [data-draft-group="${name}"]`);
+    if(!grp)return;
+    const vals=draft[k]||[];
+    grp.querySelectorAll('input[type=checkbox]').forEach(c=>{c.checked=vals.includes(c.value);});
+  });
+  // Restore extra state
+  if(draft.__reportParts){window._reportParts=draft.__reportParts;if(typeof renderReportParts==='function')renderReportParts();}
+}
+// Helper to ask user whether to restore a draft. Returns Promise<bool>.
+function offerDraftRestore(key,label){
+  return new Promise(resolve=>{
+    const draft=getFormDraft(key);
+    if(!draft||!draft.__savedAt){resolve(false);return;}
+    const age=Math.round((Date.now()-draft.__savedAt)/60000);
+    const ageLabel=age<1?'just now':age<60?age+' min ago':Math.round(age/60)+' hr ago';
+    if(confirm(`Unsaved ${label||'form'} draft found from ${ageLabel}. Restore it?`)){resolve(true);}
+    else{clearFormDraft(key);resolve(false);}
+  });
+}
+
+// Save form drafts and flush sync when page is being backgrounded (Android tab-switch / kill)
+document.addEventListener('visibilitychange',()=>{
+  if(document.visibilityState==='hidden'){
+    saveCurrentFormDraft();
+    flushPendingSync();
+  }
+});
+window.addEventListener('pagehide',()=>{saveCurrentFormDraft();flushPendingSync();});
+window.addEventListener('beforeunload',()=>{saveCurrentFormDraft();flushPendingSync();});
+
+// ===== FIREBASE (shared with OctoCRM project, separate AmwayCRM data node) =====
+const FB_CFG={apiKey:"AIzaSyCSQAS7mFBlTfmz0FVWaSLgI-Puk1Y3sN4",authDomain:"octocrm1.firebaseapp.com",databaseURL:"https://octocrm1-default-rtdb.asia-southeast1.firebasedatabase.app",projectId:"octocrm1",storageBucket:"octocrm1.firebasestorage.app",messagingSenderId:"212247591529",appId:"1:212247591529:web:4a076e40a71b59646b00f8"};
+const USE_FB=true;
+const FB_DB_NODE='amwayCRM_v1';        // own data node — separate from OctoCRM's octoCRM_v4
+const FB_SHARED_NODE='sharedFieldServiceCal_v1'; // SAME node both CRMs read/write for calendar sharing
+let fbDB=null,fbOK=false,_fbSyncBusy=false,_fbInitialLoad=true;
+let _sharedEventsCache=[]; // populated by realtime listener on FB_SHARED_NODE
+
+// Merge cloud data into local DB by id, keeping whichever record has the newer _modifiedAt.
+// Critical for preventing loss of records that were saved locally but not yet synced.
+// Also respects tombstones: if a record was deleted locally, don't resurrect it from cloud
+// unless cloud's copy is provably newer than the deletion.
+function mergeCloudIntoLocal(local,cloud){
+  const TABLES=['custs','appliances','reports','jobs','parts','partChanges','techs','users'];
+  // Tombstones: { table: { id: timestamp } }
+  const tomb=local._tombstones||{};
+  const cloudTomb=cloud._tombstones||{};
+  // Merge tombstones: keep both sides, take latest timestamp per id
+  const mergedTomb={};
+  TABLES.forEach(t=>{
+    mergedTomb[t]={};
+    [tomb[t]||{},cloudTomb[t]||{}].forEach(src=>{
+      Object.keys(src).forEach(id=>{
+        const ts=src[id]||0;
+        if((mergedTomb[t][id]||0)<ts)mergedTomb[t][id]=ts;
+      });
+    });
+  });
+  const merged={...local,_tombstones:mergedTomb};
+  TABLES.forEach(table=>{
+    const localRows=Array.isArray(local[table])?local[table]:[];
+    const cloudRows=Array.isArray(cloud[table])?cloud[table]:[];
+    const tombs=mergedTomb[table]||{};
+    const byId=new Map();
+    // Seed with local first (so local-only rows survive)
+    localRows.forEach(r=>{
+      if(!r||r.id==null)return;
+      const td=tombs[r.id]||0;
+      // If a tombstone for this id is newer than the row, treat as deleted
+      if(td&&td>=(r._modifiedAt||0))return;
+      byId.set(r.id,r);
+    });
+    // Layer cloud rows
+    cloudRows.forEach(c=>{
+      if(!c||c.id==null)return;
+      const td=tombs[c.id]||0;
+      if(td&&td>=(c._modifiedAt||0))return; // deleted, don't resurrect
+      const existing=byId.get(c.id);
+      if(!existing){byId.set(c.id,c);return;}
+      const ct=c._modifiedAt||0,lt=existing._modifiedAt||0;
+      if(ct>=lt)byId.set(c.id,c);
+    });
+    merged[table]=[...byId.values()];
+  });
+  // Bump nextIds counters past whatever we now have so new records don't collide
+  if(!merged.nextIds)merged.nextIds={};
+  const counterMap={c:'custs',a:'appliances',r:'reports',j:'jobs',p:'parts',pc:'partChanges',t:'techs',u:'users'};
+  Object.keys(counterMap).forEach(k=>{
+    const arr=merged[counterMap[k]]||[];
+    const maxId=arr.reduce((m,x)=>Math.max(m,(x&&x.id)||0),0);
+    merged.nextIds[k]=Math.max(merged.nextIds[k]||1,maxId+1,(cloud.nextIds&&cloud.nextIds[k])||1);
+  });
+  // Other scalar fields (settings) from cloud
+  Object.keys(cloud).forEach(k=>{
+    if(TABLES.includes(k)||k==='nextIds'||k==='_tombstones')return;
+    merged[k]=cloud[k];
+  });
+  return merged;
+}
+
+// Record a deletion so cloud merges respect it
+function tombstoneDelete(table,id){
+  if(!DB._tombstones)DB._tombstones={};
+  if(!DB._tombstones[table])DB._tombstones[table]={};
+  DB._tombstones[table][id]=Date.now();
+}
+
+function initFB(){
+  if(!USE_FB||typeof firebase==='undefined')return;
+  try{
+    if(!firebase.apps.length)firebase.initializeApp(FB_CFG);
+    fbDB=firebase.database();
+    // Connection status
+    fbDB.ref('.info/connected').on('value',s=>{fbOK=s.val()===true;updSync();});
+    // Listen for changes to OUR data (cross-device sync of Amway DB itself)
+    fbDB.ref(FB_DB_NODE).on('value',s=>{
+      const d=s.val();
+      if(!d){
+        // Cloud is empty — nothing to merge. Just consume the initial-load flag.
+        if(_fbInitialLoad)_fbInitialLoad=false;
+        return;
+      }
+      // Coerce arrays — Firebase stores arrays as objects when keys are sparse
+      ['custs','appliances','reports','jobs','parts','partChanges','techs','users'].forEach(k=>{
+        if(!d[k])d[k]=[];
+        else if(!Array.isArray(d[k]))d[k]=Object.values(d[k]);
+      });
+      if(_fbInitialLoad){
+        _fbInitialLoad=false;
+        // First snapshot — merge cloud INTO local (so any unsynced local data survives)
+        DB=mergeCloudIntoLocal(DB,d);
+        try{localStorage.setItem(DB_KEY,JSON.stringify(DB));}catch(e){}
+        if(CUR_USER)refreshPage();
+      }else if(!_fbSyncBusy){
+        // Live remote update — merge into our DB by id, preferring newer _modifiedAt
+        DB=mergeCloudIntoLocal(DB,d);
+        try{localStorage.setItem(DB_KEY,JSON.stringify(DB));}catch(e){}
+        if(CUR_USER)refreshPage();
+      }
+    });
+    // Listen for changes to the SHARED calendar (cross-CRM, cross-device)
+    fbDB.ref(FB_SHARED_NODE).on('value',s=>{
+      const d=s.val()||{};
+      const out=[];
+      Object.keys(d).forEach(k=>{
+        if(k===APP_TAG)return;
+        const block=d[k];
+        if(block&&block.events){
+          // FB may store array as object
+          const evs=Array.isArray(block.events)?block.events:Object.values(block.events);
+          out.push(...evs);
+        }
+      });
+      _sharedEventsCache=out;
+      // Re-render calendar/dashboard if visible
+      const a=document.querySelector('.pg.active');
+      if(a&&(a.id==='page-calendar'||a.id==='page-dashboard')){
+        if(a.id==='page-calendar')renderCal();
+        else renderDash();
+      }
+    });
+    console.log('Firebase initialized for AmwayCRM');
+  }catch(e){console.warn('FB init err:',e);updSync();}
+}
+
+function syncDBToCloud(){
+  if(!USE_FB||!fbDB||_fbSyncBusy)return;
+  // Don't push to cloud until we've received the initial cloud snapshot,
+  // otherwise on a fresh device we'd clobber other devices' data with our seed.
+  if(_fbInitialLoad)return;
+  _fbSyncBusy=true;
+  updSync('syncing');
+  fbDB.ref(FB_DB_NODE).set(DB).then(()=>{
+    _fbSyncBusy=false;updSync('ok');
+  }).catch(err=>{
+    _fbSyncBusy=false;updSync('error');
+    console.warn('FB DB sync failed:',err);
+  });
+}
+
+function updSync(state){
+  const el=document.getElementById('syncStatus');if(!el)return;
+  if(!USE_FB){el.className='sync-pill local';el.title='Offline — local only';el.innerHTML='<span class="dot"></span>Local only';return;}
+  if(state==='syncing'){el.className='sync-pill syncing';el.title='Syncing to cloud…';el.innerHTML='<span class="dot"></span>Syncing';return;}
+  if(state==='error'||(!fbOK&&!_fbInitialLoad)){el.className='sync-pill offline';el.title='Cloud sync unavailable';el.innerHTML='<span class="dot"></span>Offline';return;}
+  if(fbOK){el.className='sync-pill';el.title='Cloud sync active — calendar shared with OctoCRM in real time';el.innerHTML='<span class="dot"></span>Cloud sync';return;}
+  el.className='sync-pill local';el.title='Connecting to cloud…';el.innerHTML='<span class="dot"></span>Local only';
+}
+
+// ===== SHARED CALENDAR =====
+// Each CRM publishes its events under its own namespace into a SHARED node.
+// Cross-device sync: writes go to Firebase realtime DB, all subscribers see changes within ~1s.
+// localStorage is kept as offline fallback so the calendar still works without internet.
+const APP_TAG='amway';
+function publishCalendarToShared(){
+  try{
+    const myEvents=[];
+    DB.jobs.forEach(j=>{
+      if(!j.date||j.status==='Cancelled'||j.status==='Completed')return;
+      myEvents.push({
+        id:'amway-job-'+j.id,
+        title:j.title||'Job',
+        date:j.date,time:j.time||'',
+        customer:j.customer||'',
+        techIds:j.techIds||[],
+        techNames:getJobTechNames(j),
+        type:j.type||'Service',
+        priority:j.priority||'Medium',
+        status:j.status||'Open',
+        appliance:j.appliance||'',
+        source:APP_TAG,
+        sourceLabel:'AmwayCare'
+      });
+    });
+    DB.reports.forEach(r=>{
+      if(!r.nextVisit)return;
+      myEvents.push({
+        id:'amway-visit-'+r.id,
+        title:'Follow-up: '+(r.customer||''),
+        date:r.nextVisit,time:'',
+        customer:r.customer||'',
+        techIds:[],techNames:r.engineer||'',
+        type:'Follow-up',priority:'Medium',status:'Scheduled',
+        source:APP_TAG,sourceLabel:'AmwayCare'
+      });
+    });
+    const block={events:myEvents,updated:new Date().toISOString()};
+    // Write to localStorage (offline fallback for same-device sync)
+    try{
+      let shared={};
+      const raw=localStorage.getItem(SHARED_CAL_KEY);
+      if(raw)shared=JSON.parse(raw);
+      shared[APP_TAG]=block;
+      localStorage.setItem(SHARED_CAL_KEY,JSON.stringify(shared));
+    }catch(e){}
+    // Write to Firebase (cross-device, real-time sync)
+    if(USE_FB&&fbDB){
+      fbDB.ref(FB_SHARED_NODE+'/'+APP_TAG).set(block).catch(err=>console.warn('shared cal push:',err));
+    }
+  }catch(e){console.error('cal publish',e);}
+}
+function getSharedEvents(){
+  // Prefer the FB cache (live, cross-device). Fall back to localStorage if no FB.
+  if(_sharedEventsCache&&_sharedEventsCache.length)return _sharedEventsCache;
+  try{
+    const raw=localStorage.getItem(SHARED_CAL_KEY);
+    if(!raw)return[];
+    const shared=JSON.parse(raw);
+    const out=[];
+    Object.keys(shared).forEach(k=>{
+      if(k===APP_TAG)return;
+      const block=shared[k];
+      if(block&&block.events)out.push(...block.events);
+    });
+    return out;
+  }catch(e){return[];}
+}
+
+
+// ===== SEED =====
+function seedSample(){
+  // Technicians (shared with the other CRM — same names so that scheduling conflicts show up)
+  DB.techs=[
+    {id:1,name:'Colin Tan',phone:'+6591234567',email:'colin@field.com',spec:'General Appliances'},
+    {id:2,name:'Wei Ming',phone:'+6598765432',email:'weiming@field.com',spec:'Water Treatment'},
+    {id:3,name:'Raj Kumar',phone:'+6597654321',email:'raj@field.com',spec:'Air & Cooking'}
+  ];
+  DB.nextIds.t=4;
+  // Customers
+  DB.custs=[
+    {id:1,name:'Mrs Lim Mei Ling',ada:'AMW-2398123',address:'Blk 123 Tampines St 11 #05-67',phone:'+6591110001',email:'lim.ml@example.com',joined:'2022-03-15'},
+    {id:2,name:'Mr Tan Wee Kiat',ada:'AMW-2401456',address:'45 Bishan Loop',phone:'+6591110002',email:'tanwk@example.com',joined:'2023-08-22'},
+    {id:3,name:'Ms Sarah Wong',ada:'AMW-2399777',address:'Blk 88 Jurong West Ave 4 #12-34',phone:'+6591110003',email:'sarah.w@example.com',joined:'2024-01-05'}
+  ];
+  DB.nextIds.c=4;
+  // Appliances
+  DB.appliances=[
+    {id:1,custId:1,model:'eSpring Water Treatment',serial:'ESP-2023-A1234',installDate:'2024-02-10',warrantyMonths:12,location:'Kitchen'},
+    {id:2,custId:1,model:'Atmosphere Sky Air Purifier',serial:'ATM-2023-B5678',installDate:'2023-06-15',warrantyMonths:24,location:'Living Room'},
+    {id:3,custId:2,model:'iCook Cookware Set',serial:'ICK-2024-C9012',installDate:'2024-09-01',warrantyMonths:60,location:'Kitchen'},
+    {id:4,custId:3,model:'eSpring Water Treatment',serial:'ESP-2024-D3456',installDate:'2025-11-20',warrantyMonths:12,location:'Kitchen'}
+  ];
+  DB.nextIds.a=5;
+  // Parts
+  DB.parts=[
+    {id:1,name:'eSpring Filter Cartridge',code:'ESP-CART-01',category:'eSpring',price:189.00,stock:25,minStock:5,defaultWarrantyType:'1y',photo:'',notes:'Replace every 12 months or 5000L'},
+    {id:2,name:'eSpring UV Lamp',code:'ESP-UV-01',category:'eSpring',price:95.00,stock:12,minStock:3,defaultWarrantyType:'1y',photo:'',notes:'UV-C lamp module'},
+    {id:3,name:'Atmosphere HEPA Filter',code:'ATM-HEPA-01',category:'Atmosphere',price:249.00,stock:18,minStock:5,defaultWarrantyType:'1y',photo:'',notes:'Pre-filter + HEPA combo'},
+    {id:4,name:'Atmosphere Carbon Filter',code:'ATM-CARB-01',category:'Atmosphere',price:139.00,stock:3,minStock:5,defaultWarrantyType:'3m',photo:'',notes:'Activated carbon stage'},
+    {id:5,name:'Atmosphere Motor Assembly',code:'ATM-MOT-01',category:'Atmosphere',price:380.00,stock:6,minStock:2,defaultWarrantyType:'1y',photo:'',notes:'Replacement fan motor'},
+    {id:6,name:'iCook Pan Handle',code:'ICK-HND-01',category:'iCook',price:45.00,stock:30,minStock:5,defaultWarrantyType:'3m',photo:'',notes:'Standard handle'},
+    {id:7,name:'O-Ring Seal Set',code:'GEN-ORG-01',category:'General',price:12.00,stock:50,minStock:10,defaultWarrantyType:'3m',photo:'',notes:'Universal O-ring kit'}
+  ];
+  DB.nextIds.p=8;
+}
+
+// ===== AUTH =====
+function doLogin(){
+  const u=document.getElementById('lUser').value.trim();
+  const p=document.getElementById('lPass').value;
+  const user=DB.users.find(x=>x.username.toLowerCase()===u.toLowerCase()&&x.password===p);
+  if(!user){const e=document.getElementById('loginErr');e.textContent='Invalid username or password';e.style.display='block';return;}
+  CUR_USER=user;
+  sessionStorage.setItem('amwayCRM_user',JSON.stringify(user));
+  showApp();
+}
+function doLogout(){CUR_USER=null;sessionStorage.removeItem('amwayCRM_user');document.getElementById('app').classList.remove('show');document.getElementById('loginScreen').style.display='flex';document.getElementById('lUser').value='';document.getElementById('lPass').value='';}
+function showApp(){
+  document.getElementById('loginScreen').style.display='none';
+  document.getElementById('app').classList.add('show');
+  document.getElementById('sbUName').textContent=CUR_USER.name;
+  document.getElementById('sbURole').textContent=CUR_USER.role.charAt(0).toUpperCase()+CUR_USER.role.slice(1);
+  document.getElementById('sbUAv').textContent=CUR_USER.name.charAt(0).toUpperCase();
+  const isAdmin=CUR_USER.role==='admin';
+  const isMgr=CUR_USER.role==='manager';
+  document.getElementById('navUsers').style.display=isAdmin?'':'none';
+  document.getElementById('navTech').style.display=(isAdmin||isMgr)?'':'none';
+  renderDash();
+  updCounts();
+}
+function canEdit(){return CUR_USER&&(CUR_USER.role==='admin'||CUR_USER.role==='manager');}
+function canDelete(){return CUR_USER&&CUR_USER.role==='admin';}
+
+// ===== NAV =====
+function showPage(p){
+  document.querySelectorAll('.pg').forEach(e=>{e.classList.remove('active');e.style.display='none';});
+  document.querySelectorAll('.ni').forEach(e=>e.classList.remove('active'));
+  const pg=document.getElementById('page-'+p);if(pg){pg.classList.add('active');pg.style.display='block';}
+  const nv=document.querySelector(`.ni[data-page="${p}"]`);if(nv)nv.classList.add('active');
+  const titles={dashboard:'Dashboard',jobs:'Jobs',reports:'Service Reports',customers:'Customers',appliances:'Appliances',parts:'Spare Parts',
+    'part-changes':'Part Change History',calendar:'Shared Calendar',technicians:'Technicians',users:'User Management',data:'Data Backup'};
+  document.getElementById('pageTitle').textContent=titles[p]||p;
+  closeSidebar();
+  document.querySelectorAll('.mob-tab').forEach(t=>t.classList.toggle('active',t.dataset.mp===p));
+  if(p==='dashboard')renderDash();
+  else if(p==='jobs')renderJobs();
+  else if(p==='reports')renderReports();
+  else if(p==='customers')renderCusts();
+  else if(p==='appliances')renderAppliances();
+  else if(p==='parts')renderParts();
+  else if(p==='part-changes')renderPartChanges();
+  else if(p==='calendar')renderCal();
+  else if(p==='technicians')renderTechs();
+  else if(p==='users')renderUsers();
+  else if(p==='data')renderData();
+  updCounts();
+}
+function refreshPage(){const a=document.querySelector('.pg.active');if(!a)return;showPage(a.id.replace('page-',''));}
+function toggleSidebar(){const sb=document.getElementById('sidebar'),ov=document.getElementById('sbOverlay');if(sb.classList.contains('mopen')){sb.classList.remove('mopen');ov.classList.remove('show');document.body.style.overflow='';}else{sb.classList.add('mopen');ov.classList.add('show');document.body.style.overflow='hidden';}}
+function closeSidebar(){document.getElementById('sidebar').classList.remove('mopen');document.getElementById('sbOverlay').classList.remove('show');document.body.style.overflow='';}
+function mobNav(p){closeSidebar();showPage(p);}
+document.getElementById('sbOverlay').addEventListener('click',closeSidebar);
+
+// ===== MODAL =====
+function openModal(title,body,foot){document.getElementById('moTitle').textContent=title;document.getElementById('moBody').innerHTML=body;document.getElementById('moFoot').innerHTML=foot||'<button class="btn btn-s" onclick="closeModal()">Close</button>';document.getElementById('modal').classList.add('open');}
+function closeModal(){document.getElementById('modal').classList.remove('open');}
+document.getElementById('modal').addEventListener('click',e=>{if(e.target.id==='modal')closeModal();});
+
+// ===== COUNTS =====
+function updCounts(){
+  const activeJobs=DB.jobs.filter(j=>j.status!=='Completed'&&j.status!=='Cancelled').length;
+  document.getElementById('jobCt').textContent=activeJobs;
+  document.getElementById('jobCt').style.display=activeJobs?'':'none';
+  document.getElementById('repCt').textContent=DB.reports.length;
+  document.getElementById('repCt').style.display=DB.reports.length?'':'none';
+  const lowStock=DB.parts.filter(p=>p.stock<=p.minStock).length;
+  const pc=document.getElementById('partCt');
+  pc.textContent=lowStock;pc.style.display=lowStock?'':'none';
+}
+
+// ===== WARRANTY HELPERS =====
+function getApplianceWarrantyEnd(app){
+  if(!app||!app.installDate||!app.warrantyMonths)return null;
+  const d=new Date(app.installDate);
+  d.setMonth(d.getMonth()+parseInt(app.warrantyMonths));
+  return d.toISOString().split('T')[0];
+}
+function isApplianceUnderWarranty(app){
+  const end=getApplianceWarrantyEnd(app);
+  if(!end)return false;
+  return todayISO()<=end;
+}
+function getApplianceWarrantyStatus(app){
+  const end=getApplianceWarrantyEnd(app);
+  if(!end)return{status:'unknown',label:'No warranty data',daysLeft:0,end:''};
+  const days=diffDays(todayISO(),end);
+  if(days<0)return{status:'expired',label:`Expired ${-days}d ago`,daysLeft:0,end};
+  if(days<=30)return{status:'expiring',label:`${days}d left`,daysLeft:days,end};
+  return{status:'active',label:`${days}d left`,daysLeft:days,end};
+}
+// Compute the warranty for a part being changed today
+function computePartWarranty(applianceId,partId,changeDate){
+  const app=DB.appliances.find(a=>a.id===applianceId);
+  const part=DB.parts.find(p=>p.id===partId);
+  if(!part)return null;
+  changeDate=changeDate||todayISO();
+  const result={installDate:changeDate,inheritedFrom:'',source:''};
+  if(app){
+    const appEnd=getApplianceWarrantyEnd(app);
+    if(appEnd&&changeDate<=appEnd){
+      // Appliance still under warranty -> part follows remaining appliance warranty
+      result.warrantyEnd=appEnd;
+      result.source='appliance-warranty';
+      result.sourceLabel='Inherits remaining appliance warranty';
+      result.daysCovered=diffDays(changeDate,appEnd);
+      return result;
+    }
+  }
+  // Out of warranty -> use part's default warranty (1 year or 3 months)
+  const wt=part.defaultWarrantyType||'1y';
+  const days=wt==='3m'?90:365;
+  result.warrantyEnd=addDays(changeDate,days);
+  result.source='part-default';
+  result.sourceLabel=wt==='3m'?'Standard 3-month part warranty':'Standard 1-year part warranty';
+  result.daysCovered=days;
+  return result;
+}
+
+// ===== HELPERS =====
+function getCustName(id){const c=DB.custs.find(x=>x.id===id);return c?c.name:'?';}
+function getApplianceLabel(id){const a=DB.appliances.find(x=>x.id===id);if(!a)return'?';return`${a.model} (${a.serial})`;}
+function getApplianceById(id){return DB.appliances.find(x=>x.id===id);}
+function getPartById(id){return DB.parts.find(x=>x.id===id);}
+function getTechName(id){const t=DB.techs.find(x=>x.id===id);return t?t.name:'?';}
+function getJobTechNames(j){
+  const ids=j.techIds||(j.techId?[j.techId]:[]);
+  return ids.map(getTechName).join(', ')||'Unassigned';
+}
+
+// ===== DASHBOARD =====
+function renderDash(){
+  const activeJobs=DB.jobs.filter(j=>j.status!=='Completed'&&j.status!=='Cancelled');
+  const lowStock=DB.parts.filter(p=>p.stock<=p.minStock&&p.stock>0);
+  const outStock=DB.parts.filter(p=>p.stock===0);
+  const expiringWarr=DB.appliances.filter(a=>{const s=getApplianceWarrantyStatus(a);return s.status==='expiring';});
+  const html=`
+  <div class="sg">
+    <div class="sc"><div class="si" style="background:var(--acs);color:var(--ac)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div><div class="sv">${DB.custs.length}</div><div class="sl">Customers</div></div>
+    <div class="sc"><div class="si" style="background:var(--pus);color:var(--pu)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/></svg></div><div class="sv">${DB.appliances.length}</div><div class="sl">Appliances</div></div>
+    <div class="sc"><div class="si" style="background:var(--wns);color:var(--wn)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg></div><div class="sv">${activeJobs.length}</div><div class="sl">Active Jobs</div></div>
+    <div class="sc"><div class="si" style="background:var(--oks);color:var(--ok)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/></svg></div><div class="sv">${DB.reports.length}</div><div class="sl">Reports</div></div>
+    <div class="sc"><div class="si" style="background:var(--gds);color:var(--gd)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/></svg></div><div class="sv">${DB.parts.length}</div><div class="sl">Part Types</div></div>
+    <div class="sc"><div class="si" style="background:var(--ers);color:var(--er)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div><div class="sv">${outStock.length+lowStock.length}</div><div class="sl">Stock Alerts</div></div>
+  </div>
+
+  ${outStock.length||lowStock.length?`<div class="tw" style="border-left:4px solid var(--er)"><div class="th"><h3 style="color:var(--er)">⚠ Stock Alerts</h3><button class="btn btn-s btn-sm" onclick="showPage('parts')">View All →</button></div>
+    ${outStock.map(p=>`<div class="rpt-card"><div class="rpt-card-top"><span style="font-weight:700">${E(p.name)}</span><span class="bd bd-er">Out of stock</span></div><div class="rpt-card-row"><span class="rc-label">Code</span><span class="rc-val">${E(p.code)}</span></div></div>`).join('')}
+    ${lowStock.map(p=>`<div class="rpt-card"><div class="rpt-card-top"><span style="font-weight:700">${E(p.name)}</span><span class="bd bd-wn">Low: ${p.stock} left (min ${p.minStock})</span></div><div class="rpt-card-row"><span class="rc-label">Code</span><span class="rc-val">${E(p.code)}</span></div></div>`).join('')}
+  </div>`:''}
+
+  <div class="tw"><div class="th"><h3>Active Jobs</h3><button class="btn btn-s btn-sm" onclick="showPage('jobs')">View All →</button></div>
+    ${activeJobs.length?activeJobs.slice(0,5).map(j=>`<div class="rpt-card" onclick="showPage('jobs')" style="cursor:pointer"><div class="rpt-card-top"><span style="font-weight:700">${E((j.title||'').substring(0,40))}</span>${prBd(j.priority)}</div><div class="rpt-card-row"><span class="rc-label">Customer</span><span class="rc-val">${E(j.customer)}</span></div><div class="rpt-card-row"><span class="rc-label">Technician</span><span class="rc-val">${E(getJobTechNames(j))}</span></div><div class="rpt-card-row"><span class="rc-label">Date</span><span class="rc-val">${E(j.date||'TBD')} ${E(j.time||'')}</span></div><div class="rpt-card-row"><span class="rc-label">Status</span><span class="rc-val">${jsBd(j.status)}</span></div></div>`).join(''):'<div class="es"><p>No active jobs</p></div>'}
+  </div>
+
+  ${expiringWarr.length?`<div class="tw" style="margin-top:16px;border-left:4px solid var(--wn)"><div class="th"><h3 style="color:var(--wn)">Warranty Expiring Soon</h3></div>
+    ${expiringWarr.slice(0,5).map(a=>{const s=getApplianceWarrantyStatus(a);return`<div class="rpt-card"><div class="rpt-card-top"><span style="font-weight:700">${E(a.model)}</span><span class="bd bd-wn">${E(s.label)}</span></div><div class="rpt-card-row"><span class="rc-label">Customer</span><span class="rc-val">${E(getCustName(a.custId))}</span></div><div class="rpt-card-row"><span class="rc-label">Serial</span><span class="rc-val">${E(a.serial)}</span></div><div class="rpt-card-row"><span class="rc-label">Warranty End</span><span class="rc-val">${E(s.end)}</span></div></div>`}).join('')}
+  </div>`:''}
+  `;
+  document.getElementById('dashContent').innerHTML=html;
+}
+function prBd(p){const m={Urgent:'bd-er',High:'bd-er',Medium:'bd-wn',Low:'bd-ok'};return`<span class="bd ${m[p]||'bd-ac'}">${E(p||'Medium')}</span>`;}
+function jsBd(s){const m={Open:'bd-ac',Assigned:'bd-pu','In Progress':'bd-wn',Completed:'bd-ok',Cancelled:'bd-er'};return`<span class="bd ${m[s]||'bd-ac'}">${E(s||'Open')}</span>`;}
+
+// ===== CUSTOMERS =====
+function renderCusts(){
+  const cs=DB.custs;
+  document.getElementById('customersContent').innerHTML=`<div class="tw"><div class="th"><h3>Customers (${cs.length})</h3>${canEdit()?'<button class="btn btn-p btn-sm" onclick="openCustModal()">+ Add Customer</button>':''}</div>
+    ${cs.length?cs.map(c=>{const apps=DB.appliances.filter(a=>a.custId===c.id);return`<div class="rpt-card">
+      <div class="rpt-card-top"><span style="font-weight:700">${E(c.name)}</span><span class="bd bd-gd">${E(c.ada||'No ADA#')}</span></div>
+      <div class="rpt-card-row"><span class="rc-label">Phone</span><span class="rc-val"><a href="https://wa.me/${(c.phone||'').replace(/[^0-9]/g,'')}" target="_blank" style="color:var(--wa);text-decoration:none">${E(c.phone)}</a></span></div>
+      <div class="rpt-card-row"><span class="rc-label">Email</span><span class="rc-val">${c.email?`<a href="mailto:${E(c.email)}" style="color:var(--ac);text-decoration:none">${E(c.email)}</a>`:'—'}</span></div>
+      <div class="rpt-card-row"><span class="rc-label">Address</span><span class="rc-val">${E(c.address)}</span></div>
+      <div class="rpt-card-row"><span class="rc-label">Appliances</span><span class="rc-val">${apps.length} unit(s)</span></div>
+      <div class="rpt-card-actions">
+        <button class="btn btn-sm btn-s" onclick="viewCustDetail(${c.id})">📋 Details</button>
+        ${canEdit()?`<button class="btn btn-sm btn-s" onclick="editCust(${c.id})">Edit</button>`:''}
+        ${canDelete()?`<button class="btn btn-sm btn-d" onclick="delCust(${c.id})">Remove</button>`:''}
+      </div>
+    </div>`}).join(''):'<div class="es"><p>No customers yet. Click "+ Add Customer" to start.</p></div>'}
+  </div>`;
+}
+function openCustModal(data){
+  const isEditing=!!(data&&data.id);
+  const draftKey=isEditing?'cust_edit_'+data.id:'cust_new';
+  const d=data||{};
+  openModal(d.id?'Edit Customer':'Add Customer',
+    `<input type="hidden" id="eCId" value="${d.id||''}">
+    <input type="hidden" id="cDraftKey" value="${draftKey}">
+    <div class="fr"><div class="fg"><label>Name *</label><input class="fc" id="cNm" value="${E(d.name||'')}"></div>
+    <div class="fg"><label>Amway ADA / IBO #</label><input class="fc" id="cAda" value="${E(d.ada||'')}" placeholder="AMW-..."></div></div>
+    <div class="fg"><label>Address</label><input class="fc" id="cAdd" value="${E(d.address||'')}"></div>
+    <div class="fr"><div class="fg"><label>Phone (WhatsApp)</label><input class="fc" id="cPh" value="${E(d.phone||'')}" placeholder="+65..."></div>
+    <div class="fg"><label>Email</label><input class="fc" type="email" id="cEm" value="${E(d.email||'')}"></div></div>
+    <div class="fg"><label>Joined Date</label><input class="fc" type="date" id="cJn" value="${E(d.joined||todayISO())}"></div>
+    <p style="font-size:11px;color:var(--t3);text-align:center;margin-top:8px">💾 Auto-saved as you type</p>`,
+    `<button class="btn btn-s" onclick="closeCustModal(false)">Cancel</button><button class="btn btn-p" onclick="saveCust()">Save</button>`);
+  startFormDraft(draftKey,['eCId','cNm','cAda','cAdd','cPh','cEm','cJn']);
+  if(!isEditing){
+    setTimeout(async()=>{
+      const restore=await offerDraftRestore(draftKey,'customer');
+      if(restore)applyFormDraft(getFormDraft(draftKey));
+    },100);
+  }
+}
+function closeCustModal(savedOK){
+  if(savedOK){const dk=document.getElementById('cDraftKey');if(dk)clearFormDraft(dk.value);}
+  endFormDraft();closeModal();
+}
+function editCust(id){const c=DB.custs.find(x=>x.id===id);if(c)openCustModal(c);}
+function saveCust(){
+  const eid=document.getElementById('eCId').value;
+  const d={name:document.getElementById('cNm').value.trim(),ada:document.getElementById('cAda').value.trim(),address:document.getElementById('cAdd').value.trim(),phone:document.getElementById('cPh').value.trim(),email:document.getElementById('cEm').value.trim(),joined:document.getElementById('cJn').value,_modifiedAt:Date.now()};
+  if(!d.name){toast('Name is required','error');return;}
+  if(eid){const i=DB.custs.findIndex(c=>c.id===parseInt(eid));if(i>=0)DB.custs[i]={...DB.custs[i],...d};}
+  else{d.id=DB.nextIds.c++;DB.custs.push(d);}
+  markTouched('custs');saveDB();closeCustModal(true);renderCusts();flushPendingSync();toast('Customer saved','success');
+}
+function delCust(id){
+  const apps=DB.appliances.filter(a=>a.custId===id).length;
+  if(!confirm(`Delete this customer?${apps?'\n\n⚠ '+apps+' appliance(s) are linked. They will also be removed.':''}`))return;
+  DB.appliances.filter(a=>a.custId===id).forEach(a=>tombstoneDelete('appliances',a.id));
+  DB.appliances=DB.appliances.filter(a=>a.custId!==id);
+  tombstoneDelete('custs',id);
+  DB.custs=DB.custs.filter(c=>c.id!==id);
+  saveDB();renderCusts();flushPendingSync();toast('Customer removed','info');
+}
+function viewCustDetail(id){
+  const c=DB.custs.find(x=>x.id===id);if(!c)return;
+  const apps=DB.appliances.filter(a=>a.custId===id);
+  const reports=DB.reports.filter(r=>r.custId===id);
+  let html=`<h3 style="margin-bottom:12px">${E(c.name)}</h3>
+  <div class="rpt-card-row"><span class="rc-label">ADA #</span><span class="rc-val">${E(c.ada||'—')}</span></div>
+  <div class="rpt-card-row"><span class="rc-label">Phone</span><span class="rc-val">${E(c.phone)}</span></div>
+  <div class="rpt-card-row"><span class="rc-label">Email</span><span class="rc-val">${E(c.email||'—')}</span></div>
+  <div class="rpt-card-row"><span class="rc-label">Address</span><span class="rc-val">${E(c.address)}</span></div>
+  <div class="rpt-card-row"><span class="rc-label">Joined</span><span class="rc-val">${E(c.joined||'—')}</span></div>
+
+  <h4 style="margin-top:20px;margin-bottom:10px">Appliances (${apps.length})</h4>`;
+  if(apps.length){
+    html+=apps.map(a=>{const s=getApplianceWarrantyStatus(a);const cls=s.status==='active'?'bd-ok':s.status==='expiring'?'bd-wn':'bd-er';return`<div class="rpt-card"><div class="rpt-card-top"><span style="font-weight:700">${E(a.model)}</span><span class="bd ${cls}">${E(s.label)}</span></div><div class="rpt-card-row"><span class="rc-label">Serial</span><span class="rc-val">${E(a.serial)}</span></div><div class="rpt-card-row"><span class="rc-label">Installed</span><span class="rc-val">${E(a.installDate)}</span></div><div class="rpt-card-row"><span class="rc-label">Warranty Until</span><span class="rc-val">${E(s.end||'—')}</span></div></div>`}).join('');
+  }else html+='<p class="muted">No appliances registered.</p>';
+
+  html+=`<h4 style="margin-top:20px;margin-bottom:10px">Service History (${reports.length})</h4>`;
+  if(reports.length){
+    html+=reports.slice(0,10).map(r=>`<div class="rpt-card"><div class="rpt-card-top"><span style="font-weight:700">${E(r.jobNo)}</span><span class="bd bd-ac">${E(r.date)}</span></div><div class="rpt-card-row"><span class="rc-label">Type</span><span class="rc-val">${E(r.type)}</span></div><div class="rpt-card-row"><span class="rc-label">Issue</span><span class="rc-val">${E((r.issue||'').substring(0,50))}</span></div></div>`).join('');
+  }else html+='<p class="muted">No service history.</p>';
+  openModal('Customer Details',html,'<button class="btn btn-s" onclick="closeModal()">Close</button>');
+}
+
+// ===== APPLIANCES =====
+function renderAppliances(filter){
+  const fv=filter||'all';
+  let list=DB.appliances.slice();
+  if(fv==='warranty')list=list.filter(a=>isApplianceUnderWarranty(a));
+  else if(fv==='expired')list=list.filter(a=>!isApplianceUnderWarranty(a));
+  else if(fv==='expiring')list=list.filter(a=>{const s=getApplianceWarrantyStatus(a);return s.status==='expiring';});
+  
+  document.getElementById('appliancesContent').innerHTML=`
+    <div class="oc"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px"><h3 style="margin:0">Customer Appliances (${list.length}/${DB.appliances.length})</h3>${canEdit()?'<button class="btn btn-p btn-sm" onclick="openApplianceModal()">+ Add Appliance</button>':''}</div>
+      <div class="flex-row" style="margin-top:12px">
+        <button class="fc-chip ${fv==='all'?'active':''}" onclick="renderAppliances('all')">All</button>
+        <button class="fc-chip ${fv==='warranty'?'active':''}" onclick="renderAppliances('warranty')">Under Warranty</button>
+        <button class="fc-chip ${fv==='expiring'?'active':''}" onclick="renderAppliances('expiring')">Expiring Soon</button>
+        <button class="fc-chip ${fv==='expired'?'active':''}" onclick="renderAppliances('expired')">Out of Warranty</button>
+      </div>
+    </div>
+    <div class="tw">
+      ${list.length?list.map(a=>{const s=getApplianceWarrantyStatus(a);const cls=s.status==='active'?'bd-ok':s.status==='expiring'?'bd-wn':'bd-er';const breakdowns=DB.reports.filter(r=>r.applianceId===a.id).length;return`<div class="rpt-card">
+        <div class="rpt-card-top"><span style="font-weight:700">${E(a.model)}</span><span class="bd ${cls}">${E(s.label)}</span></div>
+        <div class="rpt-card-row"><span class="rc-label">Serial</span><span class="rc-val" style="font-family:monospace">${E(a.serial)}</span></div>
+        <div class="rpt-card-row"><span class="rc-label">Customer</span><span class="rc-val">${E(getCustName(a.custId))}</span></div>
+        <div class="rpt-card-row"><span class="rc-label">Location</span><span class="rc-val">${E(a.location||'—')}</span></div>
+        <div class="rpt-card-row"><span class="rc-label">Installed</span><span class="rc-val">${E(a.installDate)}</span></div>
+        <div class="rpt-card-row"><span class="rc-label">Warranty</span><span class="rc-val">${E(a.warrantyMonths)} months — until ${E(s.end||'—')}</span></div>
+        <div class="rpt-card-row"><span class="rc-label">Breakdowns</span><span class="rc-val">${breakdowns} record(s)</span></div>
+        <div class="rpt-card-actions">
+          <button class="btn btn-sm btn-s" onclick="viewApplianceHistory(${a.id})">📜 History</button>
+          ${canEdit()?`<button class="btn btn-sm btn-s" onclick="editAppliance(${a.id})">Edit</button>`:''}
+          ${canDelete()?`<button class="btn btn-sm btn-d" onclick="delAppliance(${a.id})">Remove</button>`:''}
+        </div>
+      </div>`}).join(''):'<div class="es"><p>No appliances. Click "+ Add Appliance" to start.</p></div>'}
+    </div>`;
+}
+function openApplianceModal(data){
+  const isEditing=!!(data&&data.id);
+  const draftKey=isEditing?'appl_edit_'+data.id:'appl_new';
+  const d=data||{};
+  const custOpts=DB.custs.map(c=>`<option value="${c.id}"${d.custId==c.id?' selected':''}>${E(c.name)}</option>`).join('');
+  openModal(d.id?'Edit Appliance':'Add Appliance',
+    `<input type="hidden" id="eAId" value="${d.id||''}">
+    <input type="hidden" id="aDraftKey" value="${draftKey}">
+    <div class="fg"><label>Customer *</label><select class="fc" id="aCust"><option value="">— Select —</option>${custOpts}</select></div>
+    <div class="fr"><div class="fg"><label>Model / Product Name *</label><input class="fc" id="aMd" value="${E(d.model||'')}" placeholder="eSpring, Atmosphere..."></div>
+    <div class="fg"><label>Serial Number *</label><input class="fc" id="aSr" value="${E(d.serial||'')}"></div></div>
+    <div class="fr"><div class="fg"><label>Install Date *</label><input class="fc" type="date" id="aIn" value="${E(d.installDate||todayISO())}"></div>
+    <div class="fg"><label>Warranty (months)</label><input class="fc" type="number" id="aWr" value="${d.warrantyMonths||12}" min="0"></div></div>
+    <div class="fg"><label>Location in Home</label><input class="fc" id="aLo" value="${E(d.location||'')}" placeholder="Kitchen, Living Room..."></div>
+    <p style="font-size:11px;color:var(--t3);text-align:center;margin-top:8px">💾 Auto-saved as you type</p>`,
+    `<button class="btn btn-s" onclick="closeApplianceModal(false)">Cancel</button><button class="btn btn-p" onclick="saveAppliance()">Save</button>`);
+  startFormDraft(draftKey,['eAId','aCust','aMd','aSr','aIn','aWr','aLo']);
+  if(!isEditing){
+    setTimeout(async()=>{
+      const restore=await offerDraftRestore(draftKey,'appliance');
+      if(restore)applyFormDraft(getFormDraft(draftKey));
+    },100);
+  }
+}
+function closeApplianceModal(savedOK){
+  if(savedOK){const dk=document.getElementById('aDraftKey');if(dk)clearFormDraft(dk.value);}
+  endFormDraft();closeModal();
+}
+function editAppliance(id){const a=DB.appliances.find(x=>x.id===id);if(a)openApplianceModal(a);}
+function saveAppliance(){
+  const eid=document.getElementById('eAId').value;
+  const d={custId:parseInt(document.getElementById('aCust').value),model:document.getElementById('aMd').value.trim(),serial:document.getElementById('aSr').value.trim(),installDate:document.getElementById('aIn').value,warrantyMonths:parseInt(document.getElementById('aWr').value)||0,location:document.getElementById('aLo').value.trim(),_modifiedAt:Date.now()};
+  if(!d.custId||!d.model||!d.serial||!d.installDate){toast('Fill in required fields','error');return;}
+  if(eid){const i=DB.appliances.findIndex(a=>a.id===parseInt(eid));if(i>=0)DB.appliances[i]={...DB.appliances[i],...d};}
+  else{d.id=DB.nextIds.a++;DB.appliances.push(d);}
+  markTouched('appliances');saveDB();closeApplianceModal(true);renderAppliances();flushPendingSync();toast('Appliance saved','success');
+}
+function delAppliance(id){if(!confirm('Remove this appliance? Service history will be kept but unlinked.'))return;tombstoneDelete('appliances',id);DB.appliances=DB.appliances.filter(a=>a.id!==id);saveDB();renderAppliances();flushPendingSync();toast('Appliance removed','info');}
+function viewApplianceHistory(id){
+  const a=DB.appliances.find(x=>x.id===id);if(!a)return;
+  const s=getApplianceWarrantyStatus(a);
+  const reports=DB.reports.filter(r=>r.applianceId===id);
+  const partChanges=DB.partChanges.filter(pc=>pc.applianceId===id);
+  let html=`<div class="warr-banner ${s.status==='active'?'in':s.status==='expiring'?'exp':'out'}">
+    <strong>${s.status==='active'?'✓ Under Warranty':s.status==='expiring'?'⚠ Expiring Soon':'✗ Out of Warranty'}</strong> — ${E(s.label)}${s.end?' (until '+E(s.end)+')':''}
+  </div>
+  <div class="rpt-card-row"><span class="rc-label">Model</span><span class="rc-val">${E(a.model)}</span></div>
+  <div class="rpt-card-row"><span class="rc-label">Serial</span><span class="rc-val" style="font-family:monospace">${E(a.serial)}</span></div>
+  <div class="rpt-card-row"><span class="rc-label">Owner</span><span class="rc-val">${E(getCustName(a.custId))}</span></div>
+  <div class="rpt-card-row"><span class="rc-label">Installed</span><span class="rc-val">${E(a.installDate)}</span></div>
+
+  <h4 style="margin-top:20px;margin-bottom:10px">Breakdown Records (${reports.length})</h4>`;
+  if(reports.length){
+    html+=reports.map(r=>`<div class="rpt-card"><div class="rpt-card-top"><span style="font-weight:700">${E(r.jobNo||'#'+r.id)}</span><span class="bd bd-ac">${E(r.date)}</span></div><div class="rpt-card-row"><span class="rc-label">Issue</span><span class="rc-val">${E(r.issue||'—')}</span></div><div class="rpt-card-row"><span class="rc-label">Resolution</span><span class="rc-val">${E((r.resolution||'').substring(0,60))}</span></div><div class="rpt-card-row"><span class="rc-label">Technician</span><span class="rc-val">${E(r.engineer||'—')}</span></div></div>`).join('');
+  }else html+='<p class="muted">No breakdown records.</p>';
+
+  html+=`<h4 style="margin-top:20px;margin-bottom:10px">Parts Replaced (${partChanges.length})</h4>`;
+  if(partChanges.length){
+    html+=partChanges.map(pc=>{const part=getPartById(pc.partId);const days=diffDays(todayISO(),pc.warrantyEnd);const cls=days>=0?'bd-ok':'bd-er';return`<div class="rpt-card"><div class="rpt-card-top"><span style="font-weight:700">${E(part?part.name:'Unknown part')}</span><span class="bd ${cls}">${days>=0?days+'d left':'expired'}</span></div><div class="rpt-card-row"><span class="rc-label">Installed</span><span class="rc-val">${E(pc.installDate)}</span></div><div class="rpt-card-row"><span class="rc-label">Warranty Until</span><span class="rc-val">${E(pc.warrantyEnd)}</span></div><div class="rpt-card-row"><span class="rc-label">Source</span><span class="rc-val" style="font-size:11px">${E(pc.sourceLabel||'')}</span></div></div>`}).join('');
+  }else html+='<p class="muted">No parts replaced yet.</p>';
+  openModal('Appliance History',html,'<button class="btn btn-s" onclick="closeModal()">Close</button>');
+}
+
+// ===== PARTS INVENTORY =====
+function renderParts(filter){
+  const fv=filter||'all';
+  let list=DB.parts.slice();
+  if(fv==='low')list=list.filter(p=>p.stock<=p.minStock&&p.stock>0);
+  else if(fv==='out')list=list.filter(p=>p.stock===0);
+  else if(fv!=='all')list=list.filter(p=>p.category===fv);
+  const cats=[...new Set(DB.parts.map(p=>p.category))];
+  document.getElementById('partsContent').innerHTML=`
+    <div class="oc"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px"><h3 style="margin:0">Spare Parts (${list.length}/${DB.parts.length})</h3>${canEdit()?'<button class="btn btn-p btn-sm" onclick="openPartModal()">+ Add Part</button>':''}</div>
+      <div class="flex-row" style="margin-top:12px">
+        <button class="fc-chip ${fv==='all'?'active':''}" onclick="renderParts('all')">All</button>
+        <button class="fc-chip ${fv==='low'?'active':''}" onclick="renderParts('low')" style="${fv!=='low'?'border-color:var(--wn);color:var(--wn)':''}">Low Stock</button>
+        <button class="fc-chip ${fv==='out'?'active':''}" onclick="renderParts('out')" style="${fv!=='out'?'border-color:var(--er);color:var(--er)':''}">Out of Stock</button>
+        ${cats.map(c=>`<button class="fc-chip ${fv===c?'active':''}" onclick="renderParts('${E(c)}')">${E(c)}</button>`).join('')}
+      </div>
+    </div>
+    <div class="parts-grid">
+      ${list.length?list.map(p=>{const cls=p.stock===0?'out-stock':p.stock<=p.minStock?'low-stock':'';const stockBd=p.stock===0?'bd-er':p.stock<=p.minStock?'bd-wn':'bd-ok';const wt=p.defaultWarrantyType==='3m'?'3-month':'1-year';return`<div class="part-card ${cls}" onclick="viewPart(${p.id})">
+        <div class="part-photo">${p.photo?`<img src="${p.photo}" alt="${E(p.name)}">`:'<div class="ph-ph">📦</div>'}</div>
+        <div class="part-info">
+          <h4>${E(p.name)}</h4>
+          <div class="pn">${E(p.code)}</div>
+          <div class="pp">${fmtMoney(p.price)}</div>
+          <div class="part-stock"><span class="bd ${stockBd}" style="font-size:11px">Stock: ${p.stock}</span><span style="font-size:11px;color:var(--t3)">${E(wt)} warranty</span></div>
+        </div>
+      </div>`}).join(''):'<div class="es" style="grid-column:1/-1"><p>No parts found.</p></div>'}
+    </div>`;
+}
+function openPartModal(data){
+  const isEditing=!!(data&&data.id);
+  const draftKey=isEditing?'part_edit_'+data.id:'part_new';
+  const d=data||{};
+  openModal(d.id?'Edit Part':'Add Spare Part',
+    `<input type="hidden" id="ePId" value="${d.id||''}">
+    <input type="hidden" id="pDraftKey" value="${draftKey}">
+    <div class="fr"><div class="fg"><label>Part Name *</label><input class="fc" id="pNm" value="${E(d.name||'')}"></div>
+    <div class="fg"><label>Part Code *</label><input class="fc" id="pCd" value="${E(d.code||'')}" style="font-family:monospace"></div></div>
+    <div class="fr"><div class="fg"><label>Category</label><input class="fc" id="pCt" value="${E(d.category||'General')}" placeholder="eSpring, Atmosphere..."></div>
+    <div class="fg"><label>Customer Price ($) *</label><input class="fc" type="number" step="0.01" id="pPr" value="${d.price||0}"></div></div>
+    <div class="fr3"><div class="fg"><label>Stock Qty</label><input class="fc" type="number" id="pSk" value="${d.stock||0}" min="0"></div>
+    <div class="fg"><label>Min Stock</label><input class="fc" type="number" id="pMn" value="${d.minStock||5}" min="0"></div>
+    <div class="fg"><label>Default Warranty</label><select class="fc" id="pWt"><option value="1y"${d.defaultWarrantyType!=='3m'?' selected':''}>1 year</option><option value="3m"${d.defaultWarrantyType==='3m'?' selected':''}>3 months</option></select></div></div>
+    <div class="fg"><label>Photo (for identification)</label><input type="file" accept="image/*" class="fc" id="pPhFile" style="padding:12px" onchange="onPartPhotoSelect(event)">
+    <div id="pPhPrev" style="margin-top:10px">${d.photo?`<img src="${d.photo}" style="max-width:140px;max-height:140px;border-radius:8px;border:1px solid var(--bdr)"><br><button type="button" class="btn btn-sm btn-d" onclick="document.getElementById('pPhData').value='';document.getElementById('pPhPrev').innerHTML='<em class=muted>Cleared</em>'">Remove</button>`:''}</div>
+    <input type="hidden" id="pPhData" value="${E(d.photo||'')}"></div>
+    <div class="fg"><label>Notes</label><textarea class="fc" id="pNt">${E(d.notes||'')}</textarea></div>
+    <div style="font-size:var(--fs-xs);color:var(--t2);background:var(--input);padding:10px;border-radius:8px"><strong>💡 Warranty rule:</strong> When this part is fitted, the system applies whichever is more generous — the appliance's remaining warranty (if still active) or the default warranty above.</div>
+    <p style="font-size:11px;color:var(--t3);text-align:center;margin-top:8px">💾 Auto-saved as you type (photo not auto-saved — re-select if you reopen)</p>`,
+    `<button class="btn btn-s" onclick="closePartModal(false)">Cancel</button><button class="btn btn-p" onclick="savePart()">Save</button>`);
+  // Exclude photo data (can be large) and the file input from drafts
+  startFormDraft(draftKey,['ePId','pNm','pCd','pCt','pPr','pSk','pMn','pWt','pNt'],{exclude:['pPhData','pPhFile']});
+  if(!isEditing){
+    setTimeout(async()=>{
+      const restore=await offerDraftRestore(draftKey,'part');
+      if(restore)applyFormDraft(getFormDraft(draftKey));
+    },100);
+  }
+}
+function closePartModal(savedOK){
+  if(savedOK){const dk=document.getElementById('pDraftKey');if(dk)clearFormDraft(dk.value);}
+  endFormDraft();closeModal();
+}
+function onPartPhotoSelect(e){
+  const f=e.target.files[0];if(!f)return;
+  if(f.size>2*1024*1024){toast('Image too large (max 2MB). It will be compressed.','info');}
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    const img=new Image();
+    img.onload=()=>{
+      const max=600;let w=img.width,h=img.height;
+      if(w>max||h>max){if(w>h){h=h*max/w;w=max;}else{w=w*max/h;h=max;}}
+      const cv=document.createElement('canvas');cv.width=w;cv.height=h;
+      cv.getContext('2d').drawImage(img,0,0,w,h);
+      const dataUrl=cv.toDataURL('image/jpeg',0.8);
+      document.getElementById('pPhData').value=dataUrl;
+      document.getElementById('pPhPrev').innerHTML=`<img src="${dataUrl}" style="max-width:140px;max-height:140px;border-radius:8px;border:1px solid var(--bdr)">`;
+    };
+    img.src=ev.target.result;
+  };
+  reader.readAsDataURL(f);
+}
+function editPart(id){const p=DB.parts.find(x=>x.id===id);if(p)openPartModal(p);}
+function savePart(){
+  const eid=document.getElementById('ePId').value;
+  const d={name:document.getElementById('pNm').value.trim(),code:document.getElementById('pCd').value.trim(),category:document.getElementById('pCt').value.trim()||'General',price:parseFloat(document.getElementById('pPr').value)||0,stock:parseInt(document.getElementById('pSk').value)||0,minStock:parseInt(document.getElementById('pMn').value)||0,defaultWarrantyType:document.getElementById('pWt').value,photo:document.getElementById('pPhData').value,notes:document.getElementById('pNt').value.trim(),_modifiedAt:Date.now()};
+  if(!d.name||!d.code){toast('Name and code are required','error');return;}
+  if(eid){const i=DB.parts.findIndex(p=>p.id===parseInt(eid));if(i>=0)DB.parts[i]={...DB.parts[i],...d};}
+  else{d.id=DB.nextIds.p++;DB.parts.push(d);}
+  markTouched('parts');saveDB();closePartModal(true);renderParts();flushPendingSync();toast('Part saved','success');
+}
+function delPart(id){
+  const used=DB.partChanges.filter(pc=>pc.partId===id).length;
+  if(!confirm(`Remove this part?${used?'\n\n⚠ '+used+' part change record(s) reference this. Records will be kept.':''}`))return;
+  tombstoneDelete('parts',id);DB.parts=DB.parts.filter(p=>p.id!==id);saveDB();renderParts();flushPendingSync();toast('Part removed','info');
+}
+function viewPart(id){
+  const p=DB.parts.find(x=>x.id===id);if(!p)return;
+  const usage=DB.partChanges.filter(pc=>pc.partId===id);
+  const wt=p.defaultWarrantyType==='3m'?'3-month':'1-year';
+  const stockBd=p.stock===0?'bd-er':p.stock<=p.minStock?'bd-wn':'bd-ok';
+  let html=`<div style="text-align:center;margin-bottom:16px">${p.photo?`<img src="${p.photo}" style="max-width:240px;max-height:240px;border-radius:12px;border:1px solid var(--bdr)">`:'<div style="font-size:80px">📦</div>'}</div>
+  <h3 style="margin-bottom:4px">${E(p.name)}</h3>
+  <p class="muted" style="font-family:monospace;margin-bottom:12px">${E(p.code)}</p>
+  <div class="fr">
+    <div class="rpt-card-row"><span class="rc-label">Category</span><span class="rc-val">${E(p.category)}</span></div>
+    <div class="rpt-card-row"><span class="rc-label">Price</span><span class="rc-val" style="color:var(--ac);font-weight:700">${fmtMoney(p.price)}</span></div>
+  </div>
+  <div class="fr">
+    <div class="rpt-card-row"><span class="rc-label">Stock</span><span class="rc-val"><span class="bd ${stockBd}">${p.stock} units</span></span></div>
+    <div class="rpt-card-row"><span class="rc-label">Min Stock</span><span class="rc-val">${p.minStock}</span></div>
+  </div>
+  <div class="rpt-card-row"><span class="rc-label">Default Warranty</span><span class="rc-val">${E(wt)} (when out of appliance warranty)</span></div>
+  ${p.notes?`<div class="rpt-card-row"><span class="rc-label">Notes</span><span class="rc-val">${E(p.notes)}</span></div>`:''}
+  <h4 style="margin-top:20px;margin-bottom:10px">Usage History (${usage.length} unit${usage.length!==1?'s':''} sold)</h4>`;
+  if(usage.length){
+    html+=usage.slice(-10).reverse().map(u=>{const app=getApplianceById(u.applianceId);return`<div class="rpt-card-row"><span class="rc-label">${E(u.installDate)}</span><span class="rc-val">${E(app?app.model+' / '+getCustName(app.custId):'Unknown')}</span></div>`}).join('');
+  }else html+='<p class="muted">No usage yet.</p>';
+  let foot=`<button class="btn btn-s" onclick="closeModal()">Close</button>`;
+  if(canEdit())foot=`<button class="btn btn-s" onclick="closeModal()">Close</button><button class="btn btn-p" onclick="closeModal();editPart(${id})">Edit</button>`;
+  if(canDelete())foot+=`<button class="btn btn-d" onclick="closeModal();delPart(${id})">Remove</button>`;
+  openModal('Part Details',html,foot);
+}
+
+// ===== JOBS =====
+function renderJobs(filter){
+  const fv=filter||'active';
+  let list=DB.jobs.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  if(fv==='active')list=list.filter(j=>j.status!=='Completed'&&j.status!=='Cancelled');
+  else if(fv==='completed')list=list.filter(j=>j.status==='Completed');
+  document.getElementById('jobsContent').innerHTML=`
+    <div class="oc"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px"><h3 style="margin:0">Jobs (${list.length})</h3>${canEdit()?'<button class="btn btn-p btn-sm" onclick="openJobModal()">+ New Job</button>':''}</div>
+      <div class="flex-row" style="margin-top:12px">
+        <button class="fc-chip ${fv==='all'?'active':''}" onclick="renderJobs('all')">All</button>
+        <button class="fc-chip ${fv==='active'?'active':''}" onclick="renderJobs('active')">Active</button>
+        <button class="fc-chip ${fv==='completed'?'active':''}" onclick="renderJobs('completed')">Completed</button>
+      </div>
+    </div>
+    <div class="tw">
+      ${list.length?list.map(j=>`<div class="rpt-card">
+        <div class="rpt-card-top"><span style="font-weight:700">${E(j.title)}</span>${prBd(j.priority)}</div>
+        <div class="rpt-card-row"><span class="rc-label">Customer</span><span class="rc-val">${E(j.customer)}</span></div>
+        ${j.appliance?`<div class="rpt-card-row"><span class="rc-label">Appliance</span><span class="rc-val">${E(j.appliance)}</span></div>`:''}
+        <div class="rpt-card-row"><span class="rc-label">Type</span><span class="rc-val">${E(j.type)}</span></div>
+        <div class="rpt-card-row"><span class="rc-label">Schedule</span><span class="rc-val">${E(j.date||'TBD')} ${E(j.time||'')}</span></div>
+        <div class="rpt-card-row"><span class="rc-label">Technician</span><span class="rc-val">${E(getJobTechNames(j))}</span></div>
+        <div class="rpt-card-row"><span class="rc-label">Status</span><span class="rc-val">${jsBd(j.status)}</span></div>
+        ${j.desc?`<div class="rpt-card-row"><span class="rc-label">Notes</span><span class="rc-val">${E(j.desc.substring(0,80))}</span></div>`:''}
+        <div class="rpt-card-actions">
+          ${j.status!=='Completed'?`<button class="btn btn-sm btn-ok" onclick="createReportFromJob(${j.id})">📝 Create Report</button>`:''}
+          ${canEdit()?`<button class="btn btn-sm btn-s" onclick="editJob(${j.id})">Edit</button>`:''}
+          ${canEdit()&&j.status!=='Completed'?`<button class="btn btn-sm btn-s" onclick="updateJobStatus(${j.id})">Update Status</button>`:''}
+          ${canDelete()?`<button class="btn btn-sm btn-d" onclick="delJob(${j.id})">Remove</button>`:''}
+        </div>
+      </div>`).join(''):'<div class="es"><p>No jobs.</p></div>'}
+    </div>`;
+}
+function openJobModal(data){
+  const isEditing=!!(data&&data.id);
+  const draftKey=isEditing?'job_edit_'+data.id:'job_new';
+  const d=data||{};
+  const custOpts=DB.custs.map(c=>`<option value="${E(c.name)}"${d.customer===c.name?' selected':''}>${E(c.name)}</option>`).join('');
+  const techOpts=DB.techs.map(t=>{const checked=(d.techIds||[]).includes(t.id);return`<label style="display:flex;align-items:center;gap:8px;padding:8px;background:var(--input);border-radius:8px;cursor:pointer"><input type="checkbox" class="jTeChk" value="${t.id}"${checked?' checked':''}><span>${E(t.name)} <span class="muted">— ${E(t.spec)}</span></span></label>`}).join('');
+  openModal(d.id?'Edit Job':'New Job',
+    `<input type="hidden" id="eJId" value="${d.id||''}">
+    <input type="hidden" id="jDraftKey" value="${draftKey}">
+    <div class="fg"><label>Job Title *</label><input class="fc" id="jTi" value="${E(d.title||'')}" placeholder="e.g. Filter replacement, Breakdown service"></div>
+    <div class="fr"><div class="fg"><label>Customer *</label><select class="fc" id="jCu" onchange="onJobCustChange()"><option value="">— Select —</option>${custOpts}</select></div>
+    <div class="fg"><label>Appliance</label><select class="fc" id="jApp"><option value="">— None / TBD —</option></select></div></div>
+    <div class="fr"><div class="fg"><label>Service Type *</label><select class="fc" id="jTy"><option>Breakdown / Repair</option><option>Routine Maintenance</option><option>Filter Replacement</option><option>Installation</option><option>Inspection</option><option>Warranty Claim</option></select></div>
+    <div class="fg"><label>Priority</label><select class="fc" id="jPr"><option>Low</option><option selected>Medium</option><option>High</option><option>Urgent</option></select></div></div>
+    <div class="fr"><div class="fg"><label>Date</label><input class="fc" type="date" id="jDt" value="${E(d.date||todayISO())}"></div>
+    <div class="fg"><label>Time</label><input class="fc" type="time" id="jTm" value="${E(d.time||'09:00')}"></div></div>
+    <div class="fg"><label>Assign Technician(s)</label><div data-draft-group="jTeChk" style="display:grid;gap:8px">${techOpts||'<em class=muted>No technicians yet</em>'}</div></div>
+    <div class="fg"><label>Description / Issue Reported</label><textarea class="fc" id="jDs" placeholder="What did the customer report?">${E(d.desc||'')}</textarea></div>
+    <p style="font-size:11px;color:var(--t3);text-align:center;margin-top:8px">💾 Auto-saved as you type</p>`,
+    `<button class="btn btn-s" onclick="closeJobModal(false)">Cancel</button><button class="btn btn-p" onclick="saveJob()">Save</button>`);
+  if(d.type){const sel=document.getElementById('jTy');[...sel.options].forEach(o=>{if(o.value===d.type)o.selected=true;});}
+  if(d.priority){document.getElementById('jPr').value=d.priority;}
+  if(d.customer){onJobCustChange();setTimeout(()=>{if(d.applianceId)document.getElementById('jApp').value=d.applianceId;},50);}
+  startFormDraft(draftKey,['eJId','jTi','jCu','jApp','jTy','jPr','jDt','jTm','jDs']);
+  if(!isEditing){
+    setTimeout(async()=>{
+      const restore=await offerDraftRestore(draftKey,'job');
+      if(restore){
+        applyFormDraft(getFormDraft(draftKey));
+        if(document.getElementById('jCu').value){onJobCustChange();setTimeout(()=>{const a=getFormDraft(draftKey).jApp;if(a)document.getElementById('jApp').value=a;},80);}
+      }
+    },100);
+  }
+}
+function closeJobModal(savedOK){
+  if(savedOK){const dk=document.getElementById('jDraftKey');if(dk)clearFormDraft(dk.value);}
+  endFormDraft();closeModal();
+}
+function onJobCustChange(){
+  const name=document.getElementById('jCu').value;
+  const cust=DB.custs.find(c=>c.name===name);
+  const sel=document.getElementById('jApp');
+  if(!cust){sel.innerHTML='<option value="">— Select customer first —</option>';return;}
+  const apps=DB.appliances.filter(a=>a.custId===cust.id);
+  sel.innerHTML='<option value="">— None / TBD —</option>'+apps.map(a=>{const s=getApplianceWarrantyStatus(a);return`<option value="${a.id}">${E(a.model)} (${E(a.serial)}) — ${E(s.label)}</option>`}).join('');
+}
+function editJob(id){const j=DB.jobs.find(x=>x.id===id);if(!j)return;openJobModal(j);}
+function saveJob(){
+  const eid=document.getElementById('eJId').value;
+  const techIds=[...document.querySelectorAll('.jTeChk:checked')].map(c=>parseInt(c.value));
+  const customer=document.getElementById('jCu').value;
+  const applianceId=parseInt(document.getElementById('jApp').value)||null;
+  const app=applianceId?getApplianceById(applianceId):null;
+  const d={title:document.getElementById('jTi').value.trim(),customer,applianceId,appliance:app?`${app.model} (${app.serial})`:'',type:document.getElementById('jTy').value,priority:document.getElementById('jPr').value,date:document.getElementById('jDt').value,time:document.getElementById('jTm').value,desc:document.getElementById('jDs').value.trim(),techIds,status:techIds.length?'Assigned':'Open',_modifiedAt:Date.now()};
+  if(!d.title){toast('Job title required','error');return;}
+  if(!d.customer){toast('Select a customer','error');return;}
+  if(eid){const i=DB.jobs.findIndex(j=>j.id===parseInt(eid));if(i>=0)DB.jobs[i]={...DB.jobs[i],...d};}
+  else{d.id=DB.nextIds.j++;d.createdAt=new Date().toISOString();DB.jobs.push(d);}
+  markTouched('jobs');saveDB();closeJobModal(true);renderJobs();updCounts();flushPendingSync();toast('Job saved','success');
+}
+function delJob(id){if(!confirm('Remove this job?'))return;tombstoneDelete('jobs',id);DB.jobs=DB.jobs.filter(j=>j.id!==id);saveDB();renderJobs();updCounts();flushPendingSync();toast('Job removed','info');}
+function updateJobStatus(id){
+  const j=DB.jobs.find(x=>x.id===id);if(!j)return;
+  openModal('Update Status',`<div class="fg"><label>Status</label><select class="fc" id="jSt"><option>Open</option><option>Assigned</option><option>In Progress</option><option>Completed</option><option>Cancelled</option></select></div>`,`<button class="btn btn-s" onclick="closeModal()">Cancel</button><button class="btn btn-p" onclick="saveJobStatus(${id})">Save</button>`);
+  document.getElementById('jSt').value=j.status||'Open';
+}
+function saveJobStatus(id){const s=document.getElementById('jSt').value;const i=DB.jobs.findIndex(j=>j.id===id);if(i>=0){DB.jobs[i].status=s;saveDB();}closeModal();renderJobs();updCounts();toast('Status updated','success');}
+
+// ===== REPORTS (Breakdown record + parts replaced) =====
+function createReportFromJob(jobId){
+  const j=DB.jobs.find(x=>x.id===jobId);if(!j)return;
+  const cust=DB.custs.find(c=>c.name===j.customer);
+  openReportModal({
+    jobId:j.id,jobNo:'SR-'+String(Date.now()).substring(7),
+    custId:cust?cust.id:null,
+    customer:j.customer,
+    applianceId:j.applianceId,
+    type:j.type,
+    issue:j.desc,
+    date:todayISO(),
+    engineer:getJobTechNames(j),
+    techIds:j.techIds||[]
+  });
+}
+function renderReports(){
+  const list=DB.reports.slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  document.getElementById('reportsContent').innerHTML=`
+    <div class="oc"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px"><h3 style="margin:0">Service Reports / Breakdown Records (${list.length})</h3>${canEdit()?'<button class="btn btn-p btn-sm" onclick="openReportModal()">+ New Report</button>':''}</div></div>
+    <div class="tw">
+      ${list.length?list.map(r=>{const app=getApplianceById(r.applianceId);const partCount=(r.partsUsed||[]).length;return`<div class="rpt-card">
+        <div class="rpt-card-top"><span style="font-weight:700">${E(r.jobNo||'#'+r.id)}</span><span class="bd bd-ac">${E(r.date)}</span></div>
+        <div class="rpt-card-row"><span class="rc-label">Customer</span><span class="rc-val">${E(r.customer)}</span></div>
+        <div class="rpt-card-row"><span class="rc-label">Appliance</span><span class="rc-val">${E(app?app.model+' / '+app.serial:r.appliance||'—')}</span></div>
+        <div class="rpt-card-row"><span class="rc-label">Type</span><span class="rc-val">${E(r.type)}</span></div>
+        <div class="rpt-card-row"><span class="rc-label">Issue</span><span class="rc-val">${E((r.issue||'').substring(0,60))}</span></div>
+        <div class="rpt-card-row"><span class="rc-label">Resolution</span><span class="rc-val">${E((r.resolution||'').substring(0,60))}</span></div>
+        <div class="rpt-card-row"><span class="rc-label">Technician</span><span class="rc-val">${E(r.engineer)}</span></div>
+        <div class="rpt-card-row"><span class="rc-label">Parts Used</span><span class="rc-val">${partCount} item(s) — ${fmtMoney(r.totalCost||0)}</span></div>
+        <div class="rpt-card-actions">
+          <button class="btn btn-sm btn-s" onclick="viewReport(${r.id})">📋 View</button>
+          ${canEdit()?`<button class="btn btn-sm btn-s" onclick="editReport(${r.id})">Edit</button>`:''}
+          ${canDelete()?`<button class="btn btn-sm btn-d" onclick="delReport(${r.id})">Remove</button>`:''}
+        </div>
+      </div>`}).join(''):'<div class="es"><p>No reports yet.</p></div>'}
+    </div>`;
+}
+async function openReportModal(data){
+  const isEditing=!!(data&&data.id);
+  const draftKey=isEditing?'report_edit_'+data.id:'report_new';
+  const d=data||{date:todayISO(),jobNo:'SR-'+String(Date.now()).substring(7)};
+  const custOpts=DB.custs.map(c=>`<option value="${c.id}"${d.custId==c.id?' selected':''}>${E(c.name)}</option>`).join('');
+  const techOpts=DB.techs.map(t=>{const sel=(d.techIds||[]).includes(t.id);return`<label style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;background:var(--input);border-radius:8px;cursor:pointer;margin-right:6px;margin-bottom:6px;font-size:13px"><input type="checkbox" class="rTeChk" value="${t.id}"${sel?' checked':''}>${E(t.name)}</label>`}).join('');
+  openModal(d.id?'Edit Service Report':'New Service Report',
+    `<input type="hidden" id="eRId" value="${d.id||''}">
+    <input type="hidden" id="rJobId" value="${d.jobId||''}">
+    <input type="hidden" id="rDraftKey" value="${draftKey}">
+    <div class="fr"><div class="fg"><label>Report / Job # *</label><input class="fc" id="rJn" value="${E(d.jobNo||'')}"></div>
+    <div class="fg"><label>Date *</label><input class="fc" type="date" id="rDt" value="${E(d.date||todayISO())}"></div></div>
+    <div class="fr"><div class="fg"><label>Customer *</label><select class="fc" id="rCust" onchange="onReportCustChange()"><option value="">— Select —</option>${custOpts}</select></div>
+    <div class="fg"><label>Appliance</label><select class="fc" id="rApp" onchange="onReportApplianceChange()"><option value="">— None —</option></select></div></div>
+    <div id="rWarrBanner"></div>
+    <div class="fg"><label>Service Type</label><select class="fc" id="rTy"><option>Breakdown / Repair</option><option>Routine Maintenance</option><option>Filter Replacement</option><option>Installation</option><option>Inspection</option><option>Warranty Claim</option></select></div>
+    <div class="fg"><label>Issue Reported / Symptoms</label><textarea class="fc" id="rIs">${E(d.issue||'')}</textarea></div>
+    <div class="fg"><label>Diagnosis / Resolution</label><textarea class="fc" id="rRs">${E(d.resolution||'')}</textarea></div>
+    <div class="fg"><label>Technician(s)</label><div data-draft-group="rTeChk">${techOpts||'<em class=muted>No technicians</em>'}</div></div>
+    
+    <div style="border:1px solid var(--bdr);border-radius:12px;padding:14px;background:var(--input);margin:16px 0">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><strong>🔧 Parts Replaced</strong>${canEdit()?`<button type="button" class="btn btn-sm btn-p" onclick="addReportPart()">+ Add Part</button>`:''}</div>
+      <div id="rPartsList"></div>
+      <div style="text-align:right;margin-top:10px;font-weight:700;font-size:var(--fs-lg)">Total: <span id="rTotal" style="color:var(--ac)">$0.00</span></div>
+      <p style="font-size:11px;color:var(--t3);margin-top:8px">Stock will be deducted automatically when the report is saved. Each part will be added to the appliance's part history with its computed warranty.</p>
+    </div>
+    
+    <div class="fg"><label>Next Service Date (optional)</label><input class="fc" type="date" id="rNx" value="${E(d.nextVisit||'')}"></div>
+    <p style="font-size:11px;color:var(--t3);text-align:center;margin-top:8px">💾 Auto-saved as you type — your work survives if the app closes</p>`,
+    `<button class="btn btn-s" onclick="closeReportModal(false)">Cancel</button><button class="btn btn-p" onclick="saveReport()">Save Report</button>`);
+  if(d.type)document.getElementById('rTy').value=d.type;
+  if(d.custId){onReportCustChange();setTimeout(()=>{if(d.applianceId){document.getElementById('rApp').value=d.applianceId;onReportApplianceChange();}},50);}
+  // Parts state
+  window._reportParts=(d.partsUsed||[]).slice();
+  renderReportParts();
+  // Wire up draft auto-save
+  startFormDraft(draftKey,['eRId','rJobId','rJn','rDt','rCust','rApp','rTy','rIs','rRs','rNx']);
+  // Offer to restore prior draft if one exists (only for NEW reports — edits start from current data)
+  if(!isEditing){
+    setTimeout(async()=>{
+      const restore=await offerDraftRestore(draftKey,'service report');
+      if(restore){
+        const draft=getFormDraft(draftKey);
+        applyFormDraft(draft);
+        // Trigger appliance/customer cascades after restore
+        if(document.getElementById('rCust').value)onReportCustChange();
+        setTimeout(()=>{if(document.getElementById('rApp').value)onReportApplianceChange();},80);
+      }
+    },100);
+  }
+}
+function closeReportModal(savedOK){
+  // Only clear draft when the report has been saved successfully
+  if(savedOK){
+    const dk=document.getElementById('rDraftKey');
+    if(dk)clearFormDraft(dk.value);
+  }
+  endFormDraft();
+  closeModal();
+}
+function onReportCustChange(){
+  const id=parseInt(document.getElementById('rCust').value)||null;
+  const sel=document.getElementById('rApp');
+  if(!id){sel.innerHTML='<option value="">— Select customer first —</option>';document.getElementById('rWarrBanner').innerHTML='';return;}
+  const apps=DB.appliances.filter(a=>a.custId===id);
+  sel.innerHTML='<option value="">— None —</option>'+apps.map(a=>{const s=getApplianceWarrantyStatus(a);return`<option value="${a.id}">${E(a.model)} (${E(a.serial)}) — ${E(s.label)}</option>`}).join('');
+  onReportApplianceChange();
+}
+function onReportApplianceChange(){
+  const id=parseInt(document.getElementById('rApp').value)||null;
+  const banner=document.getElementById('rWarrBanner');
+  if(!id){banner.innerHTML='';renderReportParts();return;}
+  const app=getApplianceById(id);if(!app){banner.innerHTML='';return;}
+  const s=getApplianceWarrantyStatus(app);
+  if(s.status==='active')banner.innerHTML=`<div class="warr-banner in">✓ <strong>Appliance under warranty</strong> — ${E(s.label)}. Replaced parts will inherit this remaining warranty.</div>`;
+  else if(s.status==='expiring')banner.innerHTML=`<div class="warr-banner exp">⚠ <strong>Warranty expiring soon</strong> — ${E(s.label)}. Replaced parts inherit remaining time.</div>`;
+  else banner.innerHTML=`<div class="warr-banner out">✗ <strong>Out of warranty</strong>. Replaced parts will follow each part's standard warranty (1 year or 3 months).</div>`;
+  renderReportParts();
+}
+function addReportPart(){
+  if(!window._reportParts)window._reportParts=[];
+  window._reportParts.push({partId:null,qty:1});
+  renderReportParts();
+}
+function removeReportPart(idx){window._reportParts.splice(idx,1);renderReportParts();}
+function updateReportPart(idx,field,val){
+  if(!window._reportParts[idx])return;
+  if(field==='qty')window._reportParts[idx].qty=parseInt(val)||1;
+  else window._reportParts[idx].partId=parseInt(val)||null;
+  renderReportParts();
+}
+function renderReportParts(){
+  const list=document.getElementById('rPartsList');if(!list)return;
+  const items=window._reportParts||[];
+  const appId=parseInt((document.getElementById('rApp')||{}).value)||null;
+  if(!items.length){list.innerHTML='<p class="muted" style="font-size:13px">No parts added. Click "+ Add Part" to record a replacement.</p>';document.getElementById('rTotal').textContent='$0.00';return;}
+  let total=0;
+  list.innerHTML=items.map((it,idx)=>{
+    const part=it.partId?getPartById(it.partId):null;
+    const lineTotal=part?(part.price*it.qty):0;total+=lineTotal;
+    const stockNote=part?(part.stock<it.qty?`<span style="color:var(--er);font-size:11px">⚠ Only ${part.stock} in stock</span>`:`<span class="muted" style="font-size:11px">Stock: ${part.stock}</span>`):'';
+    let warrInfo='';
+    if(part&&appId){const w=computePartWarranty(appId,it.partId);if(w)warrInfo=`<div style="font-size:11px;color:var(--t2);margin-top:4px">📅 Warranty: until <strong>${E(w.warrantyEnd)}</strong> (${E(w.sourceLabel)})</div>`;}
+    const partOpts=DB.parts.map(p=>`<option value="${p.id}"${it.partId===p.id?' selected':''}>${E(p.name)} — ${E(p.code)} (${fmtMoney(p.price)})</option>`).join('');
+    return`<div style="background:var(--bg2);border:1px solid var(--bdr);border-radius:8px;padding:10px;margin-bottom:8px">
+      <div style="display:flex;gap:8px;align-items:flex-end">
+        <div style="flex:1"><label style="font-size:11px;color:var(--t3)">Part</label><select class="fc" style="min-height:40px;padding:8px" onchange="updateReportPart(${idx},'partId',this.value)"><option value="">— Select part —</option>${partOpts}</select></div>
+        <div style="width:80px"><label style="font-size:11px;color:var(--t3)">Qty</label><input class="fc" type="number" min="1" value="${it.qty}" style="min-height:40px;padding:8px" onchange="updateReportPart(${idx},'qty',this.value)"></div>
+        <div style="width:90px;text-align:right"><div style="font-size:11px;color:var(--t3)">Subtotal</div><div style="font-weight:700;color:var(--ac)">${fmtMoney(lineTotal)}</div></div>
+        <button class="btn btn-sm btn-d" onclick="removeReportPart(${idx})" type="button" style="min-height:40px">×</button>
+      </div>
+      <div style="display:flex;justify-content:space-between;margin-top:6px">${stockNote}</div>
+      ${warrInfo}
+    </div>`;
+  }).join('');
+  document.getElementById('rTotal').textContent=fmtMoney(total);
+}
+async function saveReport(){
+  const eid=document.getElementById('eRId').value;
+  const techIds=[...document.querySelectorAll('.rTeChk:checked')].map(c=>parseInt(c.value));
+  const custId=parseInt(document.getElementById('rCust').value)||null;
+  const cust=DB.custs.find(c=>c.id===custId);
+  const applianceId=parseInt(document.getElementById('rApp').value)||null;
+  const app=applianceId?getApplianceById(applianceId):null;
+  const partsUsed=(window._reportParts||[]).filter(p=>p.partId);
+  // Validate stock
+  for(const it of partsUsed){
+    const part=getPartById(it.partId);
+    if(!part){toast('Invalid part selected','error');return;}
+    if(part.stock<it.qty){toast(`Not enough stock for ${part.name} (have ${part.stock}, need ${it.qty})`,'error');return;}
+  }
+  let totalCost=0;partsUsed.forEach(it=>{const p=getPartById(it.partId);if(p)totalCost+=p.price*it.qty;});
+  const now=Date.now();
+  const d={jobNo:document.getElementById('rJn').value.trim(),date:document.getElementById('rDt').value,custId,customer:cust?cust.name:'',applianceId,appliance:app?`${app.model} (${app.serial})`:'',type:document.getElementById('rTy').value,issue:document.getElementById('rIs').value.trim(),resolution:document.getElementById('rRs').value.trim(),techIds,engineer:techIds.map(getTechName).join(', '),partsUsed,totalCost,nextVisit:document.getElementById('rNx').value,jobId:parseInt(document.getElementById('rJobId').value)||null,_modifiedAt:now};
+  if(!d.jobNo){toast('Report number required','error');return;}
+  if(!d.custId){toast('Select a customer','error');return;}
+  
+  if(eid){
+    // editing - simpler path: don't deduct again
+    const i=DB.reports.findIndex(r=>r.id===parseInt(eid));
+    if(i>=0)DB.reports[i]={...DB.reports[i],...d};
+  }else{
+    d.id=DB.nextIds.r++;
+    d.createdAt=new Date().toISOString();
+    DB.reports.push(d);
+    // Auto-deduct stock + create part change records (warranty tracking)
+    partsUsed.forEach(it=>{
+      const part=getPartById(it.partId);
+      if(!part)return;
+      part.stock=Math.max(0,part.stock-it.qty);
+      part._modifiedAt=now;
+      // For each unit replaced, create a part change record so warranty per-unit can be tracked
+      for(let i=0;i<it.qty;i++){
+        const w=computePartWarranty(applianceId,it.partId,d.date);
+        if(!w)continue;
+        DB.partChanges.push({
+          id:DB.nextIds.pc++,
+          reportId:d.id,
+          custId:d.custId,
+          applianceId:d.applianceId,
+          partId:it.partId,
+          installDate:w.installDate,
+          warrantyEnd:w.warrantyEnd,
+          source:w.source,
+          sourceLabel:w.sourceLabel,
+          price:part.price,
+          createdAt:new Date().toISOString(),
+          _modifiedAt:now
+        });
+      }
+    });
+    // Mark linked job complete
+    if(d.jobId){const ji=DB.jobs.findIndex(j=>j.id===d.jobId);if(ji>=0){DB.jobs[ji].status='Completed';DB.jobs[ji]._modifiedAt=now;}}
+  }
+  // Tell saveDB to stamp these tables' rows on write
+  markTouched('reports');markTouched('parts');markTouched('partChanges');markTouched('jobs');
+  saveDB();
+  // Clear the form draft now that the report is in DB and being synced
+  closeReportModal(true);
+  renderReports();updCounts();
+  // Force-flush so the cloud write happens NOW (don't lose it if user backgrounds the app)
+  flushPendingSync();
+  toast('Report saved. Stock updated. Syncing to cloud…','success');
+}
+function editReport(id){const r=DB.reports.find(x=>x.id===id);if(r)openReportModal(r);}
+function delReport(id){
+  if(!confirm('Remove this report? Stock changes will NOT be reversed automatically.'))return;
+  tombstoneDelete('reports',id);
+  DB.partChanges.filter(pc=>pc.reportId===id).forEach(pc=>tombstoneDelete('partChanges',pc.id));
+  DB.reports=DB.reports.filter(r=>r.id!==id);
+  DB.partChanges=DB.partChanges.filter(pc=>pc.reportId!==id);
+  saveDB();renderReports();updCounts();flushPendingSync();toast('Report removed','info');
+}
+function viewReport(id){
+  const r=DB.reports.find(x=>x.id===id);if(!r)return;
+  const app=getApplianceById(r.applianceId);
+  let html=`<div class="rpt-card-row"><span class="rc-label">Report #</span><span class="rc-val">${E(r.jobNo)}</span></div>
+  <div class="rpt-card-row"><span class="rc-label">Date</span><span class="rc-val">${E(r.date)}</span></div>
+  <div class="rpt-card-row"><span class="rc-label">Customer</span><span class="rc-val">${E(r.customer)}</span></div>
+  <div class="rpt-card-row"><span class="rc-label">Appliance</span><span class="rc-val">${E(app?app.model+' / '+app.serial:r.appliance||'—')}</span></div>
+  <div class="rpt-card-row"><span class="rc-label">Service Type</span><span class="rc-val">${E(r.type)}</span></div>
+  <div class="rpt-card-row"><span class="rc-label">Technician</span><span class="rc-val">${E(r.engineer)}</span></div>
+  ${r.issue?`<div style="margin-top:12px"><strong>Issue:</strong><br>${E(r.issue)}</div>`:''}
+  ${r.resolution?`<div style="margin-top:12px"><strong>Resolution:</strong><br>${E(r.resolution)}</div>`:''}`;
+  if((r.partsUsed||[]).length){
+    html+='<h4 style="margin-top:16px;margin-bottom:8px">Parts Replaced</h4>';
+    let total=0;
+    html+='<table><tr><th>Part</th><th>Qty</th><th>Price</th><th>Total</th><th>Warranty</th></tr>';
+    r.partsUsed.forEach(it=>{
+      const part=getPartById(it.partId);if(!part)return;
+      const sub=part.price*it.qty;total+=sub;
+      const w=computePartWarranty(r.applianceId,it.partId,r.date);
+      html+=`<tr><td>${E(part.name)}</td><td>${it.qty}</td><td>${fmtMoney(part.price)}</td><td>${fmtMoney(sub)}</td><td style="font-size:11px">${w?E(w.warrantyEnd):'—'}<br><span class="muted">${w?E(w.sourceLabel):''}</span></td></tr>`;
+    });
+    html+=`<tr><td colspan="3" style="text-align:right;font-weight:700">Total</td><td colspan="2" style="font-weight:700;color:var(--ac)">${fmtMoney(total)}</td></tr></table>`;
+  }
+  if(r.nextVisit)html+=`<div class="rpt-card-row" style="margin-top:12px"><span class="rc-label">Next Visit</span><span class="rc-val">${E(r.nextVisit)}</span></div>`;
+  openModal('Service Report — '+r.jobNo,html,`<button class="btn btn-s" onclick="closeModal()">Close</button>${canEdit()?`<button class="btn btn-p" onclick="closeModal();editReport(${id})">Edit</button>`:''}`);
+}
+
+// ===== PART CHANGES (history view) =====
+function renderPartChanges(filter){
+  const fv=filter||'all';
+  let list=DB.partChanges.slice().sort((a,b)=>(b.installDate||'').localeCompare(a.installDate||''));
+  const today=todayISO();
+  if(fv==='active')list=list.filter(pc=>pc.warrantyEnd>=today);
+  else if(fv==='expired')list=list.filter(pc=>pc.warrantyEnd<today);
+  document.getElementById('partChangesContent').innerHTML=`
+    <div class="oc"><h3>Part Change History (${list.length})</h3><p>All parts ever fitted to customer appliances, with computed warranty per unit.</p>
+      <div class="flex-row" style="margin-top:12px">
+        <button class="fc-chip ${fv==='all'?'active':''}" onclick="renderPartChanges('all')">All</button>
+        <button class="fc-chip ${fv==='active'?'active':''}" onclick="renderPartChanges('active')">Under Warranty</button>
+        <button class="fc-chip ${fv==='expired'?'active':''}" onclick="renderPartChanges('expired')">Expired</button>
+      </div>
+    </div>
+    <div class="tw scrollx">
+      <table>
+        <thead><tr><th>Installed</th><th>Part</th><th>Customer</th><th>Appliance</th><th>Warranty Until</th><th>Status</th><th>Source</th></tr></thead>
+        <tbody>
+          ${list.length?list.map(pc=>{const part=getPartById(pc.partId);const app=getApplianceById(pc.applianceId);const days=diffDays(today,pc.warrantyEnd);const cls=days>=0?'bd-ok':'bd-er';return`<tr>
+            <td>${E(pc.installDate)}</td>
+            <td><strong>${E(part?part.name:'?')}</strong><br><span class="muted" style="font-size:11px">${E(part?part.code:'')}</span></td>
+            <td>${E(getCustName(pc.custId))}</td>
+            <td>${E(app?app.model:'—')}<br><span class="muted" style="font-size:11px">${E(app?app.serial:'')}</span></td>
+            <td>${E(pc.warrantyEnd)}</td>
+            <td><span class="bd ${cls}">${days>=0?days+'d left':Math.abs(days)+'d ago'}</span></td>
+            <td style="font-size:11px">${E(pc.sourceLabel||pc.source||'')}</td>
+          </tr>`}).join(''):'<tr><td colspan="7" style="text-align:center;color:var(--t3);padding:32px">No part changes yet. Records appear here when parts are added to service reports.</td></tr>'}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+// ===== CALENDAR =====
+let calY,calM;
+function renderCal(){
+  if(calY===undefined){const n=new Date();calY=n.getFullYear();calM=n.getMonth();}
+  const mo=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const fd=new Date(calY,calM,1).getDay(),dm=new Date(calY,calM+1,0).getDate(),td=new Date();
+  const ev={};
+  function ae(dt,d){if(!dt)return;if(!ev[dt])ev[dt]=[];ev[dt].push(d);}
+  // Our jobs
+  DB.jobs.forEach(j=>{if(j.status==='Cancelled')return;ae(j.date,{l:'🔧 '+(j.title||'').substring(0,14),bg:'var(--acs)',c:'var(--ac)',source:'amway'});});
+  // Our reports next visits
+  DB.reports.forEach(r=>{ae(r.nextVisit,{l:'🔔 '+(r.customer||'').substring(0,12),bg:'var(--wns)',c:'var(--wn)',source:'amway'});});
+  // Shared events from OTHER CRMs
+  const sharedEvents=getSharedEvents();
+  sharedEvents.forEach(s=>{ae(s.date,{l:'🔗 '+(s.title||'').substring(0,14),bg:'var(--pus)',c:'var(--pu)',source:s.sourceLabel||'Other'});});
+  
+  let cells='';
+  for(let i=0;i<fd;i++){const pd=new Date(calY,calM,0-fd+i+1).getDate();cells+=`<div class="cd om"><div class="dn">${pd}</div></div>`;}
+  for(let d=1;d<=dm;d++){
+    const dt=`${calY}-${String(calM+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const today=td.getDate()===d&&td.getMonth()===calM&&td.getFullYear()===calY;
+    const events=ev[dt]||[];
+    cells+=`<div class="cd${today?' today':''}" onclick="showCalDay('${dt}')"><div class="dn">${d}</div>${events.slice(0,3).map(e=>`<div class="ce" style="background:${e.bg};color:${e.c}">${E(e.l)}</div>`).join('')}${events.length>3?`<div class="ce muted">+${events.length-3} more</div>`:''}</div>`;
+  }
+  const totalShared=sharedEvents.length;
+  document.getElementById('calContent').innerHTML=`
+    <div class="oc"><div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px"><h3 style="margin:0">${mo[calM]} ${calY}</h3><div class="flex-row"><button class="btn btn-s btn-sm" onclick="calNav(-1)">‹</button><button class="btn btn-s btn-sm" onclick="calToday()">Today</button><button class="btn btn-s btn-sm" onclick="calNav(1)">›</button>${canEdit()?'<button class="btn btn-p btn-sm" onclick="openJobModal()">+ Schedule Job</button>':''}</div></div>
+      <div style="margin-top:12px;display:flex;flex-wrap:wrap;gap:6px;font-size:12px">
+        <span class="bd bd-ac">🔧 Amway Jobs</span>
+        <span class="bd bd-wn">🔔 Next Visits</span>
+        <span class="bd bd-pu">🔗 Shared (other CRMs): ${totalShared}</span>
+      </div>
+    </div>
+    <div class="tw" style="padding:12px"><div class="cg">${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d=>`<div class="ch-h">${d}</div>`).join('')}${cells}</div></div>
+    <div class="oc" style="margin-top:16px">
+      <h3>📅 Calendar Sharing</h3>
+      <p>Technicians work on multiple CRMs. This calendar shows jobs from <strong>this</strong> Amway CRM <em>and</em> automatically pulls jobs from any other field-service CRM running in this browser that publishes to the shared key.</p>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px">
+        <button class="btn btn-p btn-sm" onclick="exportICS('all')">📥 Download .ics (All)</button>
+        <button class="btn btn-s btn-sm" onclick="exportICS('jobs')">Jobs Only</button>
+        <button class="btn btn-s btn-sm" onclick="exportICS('visits')">Next Visits Only</button>
+      </div>
+      <p style="font-size:12px;color:var(--t3);margin-top:8px">Import to Outlook / Google / Apple Calendar to sync with your phone or laptop.</p>
+    </div>`;
+}
+function calNav(d){calM+=d;if(calM<0){calM=11;calY--;}else if(calM>11){calM=0;calY++;}renderCal();}
+function calToday(){const n=new Date();calY=n.getFullYear();calM=n.getMonth();renderCal();}
+function showCalDay(dt){
+  const myJobs=DB.jobs.filter(j=>j.date===dt&&j.status!=='Cancelled');
+  const myVisits=DB.reports.filter(r=>r.nextVisit===dt);
+  const shared=getSharedEvents().filter(s=>s.date===dt);
+  let html=`<h3>${E(dt)}</h3>`;
+  if(myJobs.length){html+='<h4 style="margin-top:14px;margin-bottom:8px;color:var(--ac)">🔧 Amway Jobs</h4>';myJobs.forEach(j=>{html+=`<div class="rpt-card"><div class="rpt-card-top"><strong>${E(j.title)}</strong>${prBd(j.priority)}</div><div class="rpt-card-row"><span class="rc-label">Customer</span><span class="rc-val">${E(j.customer)}</span></div><div class="rpt-card-row"><span class="rc-label">Time</span><span class="rc-val">${E(j.time||'—')}</span></div><div class="rpt-card-row"><span class="rc-label">Tech</span><span class="rc-val">${E(getJobTechNames(j))}</span></div></div>`});}
+  if(myVisits.length){html+='<h4 style="margin-top:14px;margin-bottom:8px;color:var(--wn)">🔔 Follow-up Visits</h4>';myVisits.forEach(r=>{html+=`<div class="rpt-card"><div class="rpt-card-top"><strong>${E(r.customer)}</strong></div><div class="rpt-card-row"><span class="rc-label">Last service</span><span class="rc-val">${E(r.date)}</span></div></div>`});}
+  if(shared.length){html+='<h4 style="margin-top:14px;margin-bottom:8px;color:var(--pu)">🔗 Other CRM bookings</h4>';shared.forEach(s=>{html+=`<div class="rpt-card"><div class="rpt-card-top"><strong>${E(s.title)}</strong><span class="bd bd-pu">${E(s.sourceLabel||'Other')}</span></div><div class="rpt-card-row"><span class="rc-label">Customer</span><span class="rc-val">${E(s.customer)}</span></div><div class="rpt-card-row"><span class="rc-label">Time</span><span class="rc-val">${E(s.time||'—')}</span></div><div class="rpt-card-row"><span class="rc-label">Tech</span><span class="rc-val">${E(s.techNames||'—')}</span></div></div>`});}
+  if(!myJobs.length&&!myVisits.length&&!shared.length)html+='<p class="muted">No events on this day.</p>';
+  openModal('Day Schedule',html,`<button class="btn btn-s" onclick="closeModal()">Close</button>`);
+}
+function icsEsc(s){return String(s||'').replace(/\\/g,'\\\\').replace(/;/g,'\\;').replace(/,/g,'\\,').replace(/\n/g,'\\n').replace(/\r/g,'');}
+function exportICS(filter){
+  const events=[];
+  const stamp=new Date().toISOString().replace(/[-:]/g,'').replace(/\.\d{3}/,'');
+  if(filter==='all'||filter==='jobs'){
+    DB.jobs.forEach(j=>{if(!j.date||j.status==='Cancelled')return;const d=j.date.replace(/-/g,'');const techNames=getJobTechNames(j);const cust=DB.custs.find(c=>c.name===j.customer);const ev=['BEGIN:VEVENT',`UID:amway-job-${j.id}@amwaycrm`,`DTSTAMP:${stamp}`];if(j.time){const[hh,mm]=j.time.split(':');ev.push(`DTSTART:${d}T${hh}${mm}00`);ev.push(`DTEND:${d}T${String(parseInt(hh)+1).padStart(2,'0')}${mm}00`);}else{ev.push(`DTSTART;VALUE=DATE:${d}`,`DTEND;VALUE=DATE:${d}`);}ev.push(`SUMMARY:${icsEsc('[Amway] '+j.title)}`);if(cust&&cust.address)ev.push(`LOCATION:${icsEsc(cust.address)}`);let desc=`Type: ${j.type}\nCustomer: ${j.customer}\nTechnician: ${techNames}\nPriority: ${j.priority}\nStatus: ${j.status}`;if(j.appliance)desc+=`\nAppliance: ${j.appliance}`;if(cust&&cust.phone)desc+=`\nContact: ${cust.phone}`;if(j.desc)desc+=`\n\n${j.desc}`;ev.push(`DESCRIPTION:${icsEsc(desc)}`);ev.push(`STATUS:${j.status==='Completed'?'COMPLETED':'CONFIRMED'}`);ev.push('END:VEVENT');events.push(ev.join('\r\n'));});
+  }
+  if(filter==='all'||filter==='visits'){
+    DB.reports.forEach(r=>{if(!r.nextVisit)return;const d=r.nextVisit.replace(/-/g,'');const ev=['BEGIN:VEVENT',`UID:amway-visit-${r.id}@amwaycrm`,`DTSTAMP:${stamp}`,`DTSTART;VALUE=DATE:${d}`,`DTEND;VALUE=DATE:${d}`,`SUMMARY:${icsEsc('[Amway] Follow-up: '+r.customer)}`,`DESCRIPTION:${icsEsc('Follow-up for '+r.customer+' — '+r.appliance)}`,'END:VEVENT'];events.push(ev.join('\r\n'));});
+  }
+  if(!events.length){toast('No events to export','info');return;}
+  const ics=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//AmwayCare CRM//EN','CALSCALE:GREGORIAN',...events,'END:VCALENDAR'].join('\r\n');
+  const blob=new Blob([ics],{type:'text/calendar'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`amwaycare_${filter}_${todayISO()}.ics`;a.click();URL.revokeObjectURL(a.href);
+  toast(`${events.length} events exported`,'success');
+}
+
+// ===== TECHNICIANS =====
+function renderTechs(){
+  document.getElementById('techContent').innerHTML=`<div class="tw"><div class="th"><h3>Technicians (${DB.techs.length})</h3>${canEdit()?'<button class="btn btn-p btn-sm" onclick="openTechModal()">+ Add</button>':''}</div>
+    ${DB.techs.length?DB.techs.map(t=>{const aj=DB.jobs.filter(j=>j.status!=='Completed'&&j.status!=='Cancelled'&&(j.techIds||[]).includes(t.id)).length;return`<div class="rpt-card">
+      <div class="rpt-card-top"><span style="font-weight:700">${E(t.name)}</span><span class="bd ${aj?'bd-wn':'bd-ok'}">${aj?'Busy ('+aj+')':'Available'}</span></div>
+      <div class="rpt-card-row"><span class="rc-label">WhatsApp</span><span class="rc-val"><a href="https://wa.me/${(t.phone||'').replace(/[^0-9]/g,'')}" target="_blank" style="color:var(--wa);text-decoration:none">${E(t.phone)}</a></span></div>
+      <div class="rpt-card-row"><span class="rc-label">Email</span><span class="rc-val">${t.email?E(t.email):'—'}</span></div>
+      <div class="rpt-card-row"><span class="rc-label">Specialization</span><span class="rc-val">${E(t.spec)}</span></div>
+      <div class="rpt-card-actions">${canEdit()?`<button class="btn btn-sm btn-s" onclick="editTech(${t.id})">Edit</button>`:''} ${canDelete()?`<button class="btn btn-sm btn-d" onclick="delTech(${t.id})">Remove</button>`:''}</div>
+    </div>`}).join(''):'<div class="es"><p>No technicians.</p></div>'}
+  </div>
+  <div class="oc"><p>💡 <strong>Tip:</strong> Add the same technicians used in your other field-service CRM to keep schedules in sync. The shared calendar will then show all bookings for each technician.</p></div>`;
+}
+function openTechModal(data){
+  const d=data||{};
+  openModal(d.id?'Edit Technician':'Add Technician',
+    `<input type="hidden" id="eTId" value="${d.id||''}">
+    <div class="fg"><label>Name *</label><input class="fc" id="tNm" value="${E(d.name||'')}"></div>
+    <div class="fr"><div class="fg"><label>WhatsApp</label><input class="fc" id="tPh" value="${E(d.phone||'')}" placeholder="+65..."></div>
+    <div class="fg"><label>Email</label><input class="fc" type="email" id="tEm" value="${E(d.email||'')}"></div></div>
+    <div class="fg"><label>Specialization</label><select class="fc" id="tSp">
+      <option${d.spec==='General Appliances'?' selected':''}>General Appliances</option>
+      <option${d.spec==='Water Treatment'?' selected':''}>Water Treatment</option>
+      <option${d.spec==='Air & Cooking'?' selected':''}>Air & Cooking</option>
+      <option${d.spec==='Electrical'?' selected':''}>Electrical</option>
+    </select></div>`,
+    `<button class="btn btn-s" onclick="closeModal()">Cancel</button><button class="btn btn-p" onclick="saveTech()">Save</button>`);
+}
+function editTech(id){const t=DB.techs.find(x=>x.id===id);if(t)openTechModal(t);}
+function saveTech(){
+  const eid=document.getElementById('eTId').value;
+  const d={name:document.getElementById('tNm').value.trim(),phone:document.getElementById('tPh').value.trim(),email:document.getElementById('tEm').value.trim(),spec:document.getElementById('tSp').value};
+  if(!d.name){toast('Name required','error');return;}
+  if(eid){const i=DB.techs.findIndex(t=>t.id===parseInt(eid));if(i>=0)DB.techs[i]={...DB.techs[i],...d};}
+  else{d.id=DB.nextIds.t++;DB.techs.push(d);}
+  saveDB();closeModal();renderTechs();toast('Technician saved','success');
+}
+function delTech(id){if(!confirm('Remove this technician?'))return;DB.techs=DB.techs.filter(t=>t.id!==id);saveDB();renderTechs();toast('Removed','info');}
+
+// ===== USERS =====
+function renderUsers(){
+  if(CUR_USER.role!=='admin'){document.getElementById('usersContent').innerHTML='<div class="es"><p>Admin access required.</p></div>';return;}
+  document.getElementById('usersContent').innerHTML=`<div class="tw"><div class="th"><h3>Users (${DB.users.length})</h3><button class="btn btn-p btn-sm" onclick="openUserModal()">+ Add User</button></div>
+    ${DB.users.map(u=>`<div class="rpt-card"><div class="rpt-card-top"><span style="font-weight:700">${E(u.name)}</span><span class="bd bd-ac">${E(u.role)}</span></div>
+      <div class="rpt-card-row"><span class="rc-label">Username</span><span class="rc-val">${E(u.username)}</span></div>
+      <div class="rpt-card-actions"><button class="btn btn-sm btn-s" onclick="editUser(${u.id})">Edit</button>${u.id!==CUR_USER.id?`<button class="btn btn-sm btn-d" onclick="delUser(${u.id})">Remove</button>`:''}</div>
+    </div>`).join('')}
+  </div>`;
+}
+function openUserModal(data){
+  const d=data||{};
+  openModal(d.id?'Edit User':'Add User',
+    `<input type="hidden" id="eUId" value="${d.id||''}">
+    <div class="fg"><label>Name</label><input class="fc" id="uNm" value="${E(d.name||'')}"></div>
+    <div class="fr"><div class="fg"><label>Username</label><input class="fc" id="uUn" value="${E(d.username||'')}" autocomplete="off"></div>
+    <div class="fg"><label>Password</label><input class="fc" type="text" id="uPw" value="${E(d.password||'')}" autocomplete="off"></div></div>
+    <div class="fg"><label>Role</label><select class="fc" id="uRl">
+      <option value="admin"${d.role==='admin'?' selected':''}>Admin — Full access</option>
+      <option value="manager"${d.role==='manager'?' selected':''}>Manager — Create/edit, no user mgmt</option>
+      <option value="technician"${d.role==='technician'?' selected':''}>Technician — View & status updates</option>
+    </select></div>`,
+    `<button class="btn btn-s" onclick="closeModal()">Cancel</button><button class="btn btn-p" onclick="saveUser()">Save</button>`);
+}
+function editUser(id){const u=DB.users.find(x=>x.id===id);if(u)openUserModal(u);}
+function saveUser(){
+  const eid=document.getElementById('eUId').value;
+  const d={name:document.getElementById('uNm').value.trim(),username:document.getElementById('uUn').value.trim(),password:document.getElementById('uPw').value,role:document.getElementById('uRl').value};
+  if(!d.name||!d.username||!d.password){toast('All fields required','error');return;}
+  if(eid){const i=DB.users.findIndex(u=>u.id===parseInt(eid));if(i>=0)DB.users[i]={...DB.users[i],...d};}
+  else{d.id=DB.nextIds.u++;DB.users.push(d);}
+  saveDB();closeModal();renderUsers();toast('User saved','success');
+}
+function delUser(id){if(!confirm('Remove user?'))return;DB.users=DB.users.filter(u=>u.id!==id);saveDB();renderUsers();toast('Removed','info');}
+
+// ===== DATA BACKUP =====
+function renderData(){
+  document.getElementById('dataContent').innerHTML=`<div style="max-width:800px">
+    <div class="oc">
+      <h3>📦 Statistics</h3>
+      <div class="sg" style="margin-top:12px">
+        <div class="sc"><div class="sv">${DB.custs.length}</div><div class="sl">Customers</div></div>
+        <div class="sc"><div class="sv">${DB.appliances.length}</div><div class="sl">Appliances</div></div>
+        <div class="sc"><div class="sv">${DB.parts.length}</div><div class="sl">Part Types</div></div>
+        <div class="sc"><div class="sv">${DB.reports.length}</div><div class="sl">Reports</div></div>
+        <div class="sc"><div class="sv">${DB.partChanges.length}</div><div class="sl">Part Changes</div></div>
+        <div class="sc"><div class="sv">${DB.jobs.length}</div><div class="sl">Jobs</div></div>
+      </div>
+    </div>
+    <div class="oc"><h3>💾 Full Backup</h3><p>Download the entire database as a JSON file. Keep this safe — it includes part photos.</p>
+      <div class="flex-row" style="margin-top:12px">
+        <button class="btn btn-p btn-sm" onclick="exportJSON()">📤 Export JSON Backup</button>
+        <button class="btn btn-s btn-sm" onclick="document.getElementById('jsonImpFile').click()">📥 Restore from JSON</button>
+        <input type="file" accept=".json" id="jsonImpFile" style="display:none" onchange="importJSON(this.files[0])">
+      </div>
+    </div>
+    <div class="oc"><h3>📄 CSV Export</h3><p>Per-table exports for use in Excel / Google Sheets.</p>
+      <div class="flex-row" style="margin-top:12px">
+        <button class="btn btn-p btn-sm" onclick="exportCSV('customers')">Customers</button>
+        <button class="btn btn-p btn-sm" onclick="exportCSV('appliances')">Appliances</button>
+        <button class="btn btn-p btn-sm" onclick="exportCSV('parts')">Parts (no photos)</button>
+        <button class="btn btn-p btn-sm" onclick="exportCSV('reports')">Reports</button>
+        <button class="btn btn-p btn-sm" onclick="exportCSV('partChanges')">Part Changes</button>
+        <button class="btn btn-p btn-sm" onclick="exportCSV('jobs')">Jobs</button>
+      </div>
+    </div>
+    ${canDelete()?`<div class="oc" style="border-color:var(--er)"><h3 style="color:var(--er)">⚠ Reset Database</h3><p>This wipes all data and re-seeds with sample data. Use only for testing.</p>
+      <button class="btn btn-d btn-sm" style="margin-top:8px" onclick="resetDB()">Reset All Data</button>
+    </div>`:''}
+  </div>`;
+}
+function exportJSON(){
+  const blob=new Blob([JSON.stringify(DB,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`amwaycare_backup_${todayISO()}.json`;a.click();URL.revokeObjectURL(a.href);
+  toast('Backup exported','success');
+}
+function importJSON(file){
+  if(!file)return;
+  const r=new FileReader();
+  r.onload=()=>{try{const obj=JSON.parse(r.result);if(!confirm('Restore from this backup? Current data will be replaced.'))return;DB={...DB,...obj};saveDB();toast('Backup restored','success');refreshPage();}catch(e){toast('Invalid backup file','error');}};
+  r.readAsText(file);
+}
+function escCSV(v){if(v===null||v===undefined)return'';const s=String(v);if(s.includes(',')||s.includes('"')||s.includes('\n'))return'"'+s.replace(/"/g,'""')+'"';return s;}
+function toCSV(headers,rows){return[headers.map(escCSV).join(','),...rows.map(r=>headers.map(h=>escCSV(r[h])).join(','))].join('\n');}
+function exportCSV(table){
+  let headers,rows;
+  switch(table){
+    case 'customers':headers=['id','name','ada','address','phone','email','joined'];rows=DB.custs;break;
+    case 'appliances':headers=['id','custId','model','serial','installDate','warrantyMonths','location'];rows=DB.appliances.map(a=>({...a,customer:getCustName(a.custId)}));headers.push('customer');break;
+    case 'parts':headers=['id','name','code','category','price','stock','minStock','defaultWarrantyType','notes'];rows=DB.parts;break;
+    case 'reports':headers=['id','jobNo','date','customer','appliance','type','issue','resolution','engineer','totalCost','nextVisit'];rows=DB.reports;break;
+    case 'partChanges':headers=['id','installDate','warrantyEnd','customer','appliance','part','source'];rows=DB.partChanges.map(pc=>({...pc,customer:getCustName(pc.custId),appliance:getApplianceLabel(pc.applianceId),part:(getPartById(pc.partId)||{}).name||''}));break;
+    case 'jobs':headers=['id','title','customer','appliance','type','priority','date','time','status','desc'];rows=DB.jobs.map(j=>({...j,techNames:getJobTechNames(j)}));headers.push('techNames');break;
+    default:return;
+  }
+  const csv=toCSV(headers,rows);
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`amwaycare_${table}_${todayISO()}.csv`;a.click();URL.revokeObjectURL(a.href);
+  toast(`${rows.length} ${table} exported`,'success');
+}
+function resetDB(){if(!confirm('This wipes ALL data. Are you sure?'))return;localStorage.removeItem(DB_KEY);location.reload();}
+
+// ===== INIT =====
+function init(){
+  loadDB();
+  // Resume session
+  try{const s=sessionStorage.getItem('amwayCRM_user');if(s){CUR_USER=JSON.parse(s);showApp();}}catch(e){}
+  // Listen for cross-tab calendar updates from the OTHER CRM (offline / same-device fallback)
+  window.addEventListener('storage',e=>{
+    if(e.key===SHARED_CAL_KEY){
+      const a=document.querySelector('.pg.active');
+      if(a&&a.id==='page-calendar')renderCal();
+      if(a&&a.id==='page-dashboard')renderDash();
+    }
+  });
+  // Login on Enter
+  document.getElementById('lPass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+  document.getElementById('lUser').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+  // Publish to shared calendar on first load (offline copy)
+  publishCalendarToShared();
+  // Load Firebase SDK and initialize cloud sync
+  if(USE_FB){
+    const s1=document.createElement('script');
+    s1.src='https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js';
+    s1.onload=()=>{
+      const s2=document.createElement('script');
+      s2.src='https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js';
+      s2.onload=()=>{initFB();updSync();};
+      document.head.appendChild(s2);
+    };
+    document.head.appendChild(s1);
+  }
+  updSync();
+}
+init();
+</script>
+</body>
+</html>
