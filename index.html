@@ -162,11 +162,11 @@ select.fc{appearance:none;-webkit-appearance:none;background-image:url("data:ima
 /* ===== CALENDAR ===== */
 .cg{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
 .ch-h{text-align:center;font-size:var(--fs-xs);font-weight:700;color:var(--t3);padding:8px}
-.cd{min-height:84px;background:var(--bg2);border:1px solid var(--bdr);border-radius:8px;padding:6px;font-size:var(--fs-xs);cursor:pointer}
+.cd{min-height:84px;background:var(--bg2);border:1px solid var(--bdr);border-radius:8px;padding:6px;font-size:var(--fs-xs);cursor:pointer;box-sizing:border-box;overflow:hidden;display:flex;flex-direction:column;-webkit-tap-highlight-color:rgba(0,0,0,0.1)}
 .cd.today{border-color:var(--ac);background:var(--acs)}
 .cd.om{opacity:.3}
-.cd .dn{font-weight:700;font-size:var(--fs-sm);margin-bottom:2px}
-.ce{font-size:10px;padding:2px 4px;border-radius:4px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cd .dn{font-weight:700;font-size:var(--fs-sm);margin-bottom:2px;flex-shrink:0}
+.ce{font-size:11px;line-height:1.2;padding:2px 4px;border-radius:4px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;flex-shrink:0;-webkit-text-size-adjust:100%}
 
 /* ===== TOAST ===== */
 .tc-c{position:fixed;top:max(80px,calc(env(safe-area-inset-top,0px) + 70px));right:max(24px,env(safe-area-inset-right,24px));z-index:2000;display:flex;flex-direction:column;gap:8px}
@@ -212,8 +212,16 @@ select.fc{appearance:none;-webkit-appearance:none;background-image:url("data:ima
   .mob-tab{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 8px;border:none;background:none;cursor:pointer;color:var(--t3);font-size:10px;font-weight:600;flex:1;min-height:48px;font-family:inherit}
   .mob-tab svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2}
   .mob-tab.active{color:var(--ac)}
-  .ce{font-size:9px}
-  .cd{min-height:60px;padding:4px}
+  .ce{font-size:10px;padding:1px 3px}
+  .cd{min-height:80px;padding:3px}
+  .cg{gap:2px}
+  .ch-h{padding:6px 2px;font-size:10px}
+}
+@media(max-width:480px){
+  .ce{font-size:10px;padding:1px 2px;line-height:1.15}
+  .cd{min-height:72px;padding:2px}
+  .cd .dn{font-size:11px;margin-bottom:1px}
+  .cg{gap:1px}
 }
 
 /* ===== UTILITIES ===== */
@@ -1724,13 +1732,17 @@ function renderCal(){
   const fd=new Date(calY,calM,1).getDay(),dm=new Date(calY,calM+1,0).getDate(),td=new Date();
   const ev={};
   function ae(dt,d){if(!dt)return;if(!ev[dt])ev[dt]=[];ev[dt].push(d);}
+  // Mobile-friendly event count and label length (iOS Safari narrow viewports)
+  const isNarrow=typeof window!=='undefined'&&window.innerWidth&&window.innerWidth<=480;
+  const maxEvents=isNarrow?2:3;
+  const labelTrim=isNarrow?8:14;
   // Our jobs
-  DB.jobs.forEach(j=>{if(j.status==='Cancelled')return;ae(j.date,{l:'🔧 '+(j.title||'').substring(0,14),bg:'var(--acs)',c:'var(--ac)',source:'amway'});});
+  DB.jobs.forEach(j=>{if(j.status==='Cancelled')return;ae(j.date,{l:'🔧 '+(j.title||'').substring(0,labelTrim),bg:'var(--acs)',c:'var(--ac)',source:'amway'});});
   // Our reports next visits
-  DB.reports.forEach(r=>{ae(r.nextVisit,{l:'🔔 '+(r.customer||'').substring(0,12),bg:'var(--wns)',c:'var(--wn)',source:'amway'});});
+  DB.reports.forEach(r=>{ae(r.nextVisit,{l:'🔔 '+(r.customer||'').substring(0,labelTrim),bg:'var(--wns)',c:'var(--wn)',source:'amway'});});
   // Shared events from OTHER CRMs
   const sharedEvents=getSharedEvents();
-  sharedEvents.forEach(s=>{ae(s.date,{l:'🔗 '+(s.title||'').substring(0,14),bg:'var(--pus)',c:'var(--pu)',source:s.sourceLabel||'Other'});});
+  sharedEvents.forEach(s=>{ae(s.date,{l:'🔗 '+(s.title||'').substring(0,labelTrim),bg:'var(--pus)',c:'var(--pu)',source:s.sourceLabel||'Other'});});
   
   let cells='';
   for(let i=0;i<fd;i++){const pd=new Date(calY,calM,0-fd+i+1).getDate();cells+=`<div class="cd om"><div class="dn">${pd}</div></div>`;}
@@ -1738,7 +1750,7 @@ function renderCal(){
     const dt=`${calY}-${String(calM+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
     const today=td.getDate()===d&&td.getMonth()===calM&&td.getFullYear()===calY;
     const events=ev[dt]||[];
-    cells+=`<div class="cd${today?' today':''}" onclick="showCalDay('${dt}')"><div class="dn">${d}</div>${events.slice(0,3).map(e=>`<div class="ce" style="background:${e.bg};color:${e.c}">${E(e.l)}</div>`).join('')}${events.length>3?`<div class="ce muted">+${events.length-3} more</div>`:''}</div>`;
+    cells+=`<div class="cd${today?' today':''}" onclick="showCalDay('${dt}')"><div class="dn">${d}</div>${events.slice(0,maxEvents).map(e=>`<div class="ce" style="background:${e.bg};color:${e.c}">${E(e.l)}</div>`).join('')}${events.length>maxEvents?`<div class="ce muted">+${events.length-maxEvents}</div>`:''}</div>`;
   }
   const totalShared=sharedEvents.length;
   document.getElementById('calContent').innerHTML=`
