@@ -683,6 +683,8 @@ function initFB(){
         ensureDefaultUsers();
         try{localStorage.setItem(DB_KEY,JSON.stringify(DB));}catch(e){}
         if(CUR_USER)refreshPage();
+        // Pull PDFs from separate node
+        pullJobPDFs();
       }else if(!_fbSyncBusy){
         // Live remote update — merge into our DB by id, preferring newer _modifiedAt
         DB=mergeCloudIntoLocal(DB,d);
@@ -726,12 +728,47 @@ function syncDBToCloud(){
   // Strip large photo data from parts before pushing to Firebase (each device loads from embedded data)
   const syncDB=JSON.parse(JSON.stringify(DB));
   if(syncDB.parts)syncDB.parts.forEach(p=>{if(p.photo&&p.photo.length>1000)p.photo='';});
-  if(syncDB.jobs)syncDB.jobs.forEach(j=>{delete j.pdfAttachment;delete j.signedPDF;});
+  // Strip PDFs from main sync — they sync separately via syncJobPDFs()
+  const pdfCache={};
+  if(syncDB.jobs)syncDB.jobs.forEach(j=>{
+    if(j.pdfAttachment){pdfCache[j.id]={pdfAttachment:j.pdfAttachment,pdfName:j.pdfName};delete j.pdfAttachment;}
+    if(j.signedPDF){if(!pdfCache[j.id])pdfCache[j.id]={};pdfCache[j.id].signedPDF=j.signedPDF;delete j.signedPDF;}
+  });
   fbDB.ref(FB_DB_NODE).set(syncDB).then(()=>{
+    _fbSyncBusy=false;updSync('ok');
+    // Sync PDFs separately to their own node
+    syncJobPDFs(pdfCache);
+  }).catch(err=>{
     _fbSyncBusy=false;updSync('ok');
   }).catch(err=>{
     _fbSyncBusy=false;updSync('error');
     console.warn('FB DB sync failed:',err);
+  });
+}
+
+// Sync PDFs to a separate Firebase node (per job ID)
+const FB_PDF_NODE='amwayCRM_pdfs';
+function syncJobPDFs(pdfCache){
+  if(!fbDB||!pdfCache)return;
+  Object.entries(pdfCache).forEach(([jobId,data])=>{
+    if(data.pdfAttachment||data.signedPDF){
+      fbDB.ref(FB_PDF_NODE+'/'+jobId).set(data).catch(e=>console.warn('PDF sync error for job '+jobId,e));
+    }
+  });
+}
+// Pull PDFs from Firebase for jobs that don't have them locally
+function pullJobPDFs(){
+  if(!fbDB)return;
+  fbDB.ref(FB_PDF_NODE).once('value',snap=>{
+    const pdfs=snap.val();if(!pdfs)return;
+    let loaded=0;
+    Object.entries(pdfs).forEach(([jobId,data])=>{
+      const j=DB.jobs.find(x=>x.id===parseInt(jobId));
+      if(!j)return;
+      if(!j.pdfAttachment&&data.pdfAttachment){j.pdfAttachment=data.pdfAttachment;j.pdfName=data.pdfName||'amway.pdf';loaded++;}
+      if(!j.signedPDF&&data.signedPDF){j.signedPDF=data.signedPDF;loaded++;}
+    });
+    if(loaded>0){try{localStorage.setItem(DB_KEY,JSON.stringify(DB));}catch(e){}console.log('Pulled '+loaded+' PDFs from cloud');}
   });
 }
 
