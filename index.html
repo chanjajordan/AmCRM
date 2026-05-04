@@ -622,7 +622,13 @@ function mergeCloudIntoLocal(local,cloud){
       const existing=byId.get(c.id);
       if(!existing){byId.set(c.id,c);return;}
       const ct=c._modifiedAt||0,lt=existing._modifiedAt||0;
-      if(ct>=lt)byId.set(c.id,c);
+      if(ct>=lt){
+        // Cloud row wins, but preserve local photo/PDF data that cloud stripped
+        if(table==='parts'&&existing.photo&&!c.photo)c.photo=existing.photo;
+        if(table==='jobs'&&existing.pdfAttachment&&!c.pdfAttachment)c.pdfAttachment=existing.pdfAttachment;
+        if(table==='jobs'&&existing.signedPDF&&!c.signedPDF)c.signedPDF=existing.signedPDF;
+        byId.set(c.id,c);
+      }
     });
     merged[table]=[...byId.values()];
   });
@@ -716,7 +722,11 @@ function syncDBToCloud(){
   if(_fbInitialLoad)return;
   _fbSyncBusy=true;
   updSync('syncing');
-  fbDB.ref(FB_DB_NODE).set(DB).then(()=>{
+  // Strip large photo data from parts before pushing to Firebase (each device loads from embedded data)
+  const syncDB=JSON.parse(JSON.stringify(DB));
+  if(syncDB.parts)syncDB.parts.forEach(p=>{if(p.photo&&p.photo.length>1000)p.photo='';});
+  if(syncDB.jobs)syncDB.jobs.forEach(j=>{delete j.pdfAttachment;delete j.signedPDF;});
+  fbDB.ref(FB_DB_NODE).set(syncDB).then(()=>{
     _fbSyncBusy=false;updSync('ok');
   }).catch(err=>{
     _fbSyncBusy=false;updSync('error');
@@ -1104,7 +1114,7 @@ function importGoogleSheetsData(){
 
 
 function importPartsWithPhotos(){
-  if(localStorage.getItem('amwayCRM_parts_photos_v1'))return;
+  // Always run — fills photos for parts that don't have them yet (works across devices)
   const now=Date.now();
   const partsData=[
     {code:'WTI1089Z',name:'Removable Shell Assembly',category:'eSpring',photo:'data:image/jpeg;base64,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'},
@@ -1268,8 +1278,7 @@ function importPartsWithPhotos(){
   });
   markTouched('parts');
   try{localStorage.setItem(DB_KEY,JSON.stringify(DB));}catch(e){}
-  localStorage.setItem('amwayCRM_parts_photos_v1','1');
-  console.log('Parts with photos imported: '+partsData.length);
+  console.log('Parts photos check complete: '+partsData.length+' parts processed');
 }
 
 // ===== AUTH =====
