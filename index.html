@@ -2142,17 +2142,156 @@ function importAmwayPDF(){
 function fileToBase64(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=()=>rej(new Error('Read failed'));r.readAsDataURL(file);});}
 async function parseWithClaude(pdfBase64){
   const b64Data=pdfBase64.split(',')[1];
-  const resp=await fetch('https://api.anthropic.com/v1/messages',{
-    method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,
-      messages:[{role:'user',content:[
-        {type:'document',source:{type:'base64',media_type:'application/pdf',data:b64Data}},
-        {type:'text',text:'Extract ALL fields from this Amway job PDF. Return ONLY valid JSON, no markdown, no backticks. Schema: {"jobId":<number>,"date":"<YYYY-MM-DD>","time":"<as shown>","address":"<full address>","customerName":"<full name>","aboId":"<ABO/APC ID>","email":"","phone":"<phone>","sku":"<SKU>","productDescription":"<product desc>","serialNumber":"<serial>","warrantyStatus":"<In-warranty or Out-of-warranty>","salesOrder":"<sales order>","remarks":"<comment/remarks>","jobType":"<Installation|Breakdown / Repair|Filter Replacement|Routine Maintenance|Inspection|Warranty Claim>"}'}
-      ]}]})
+  // Try Claude API first
+  try{
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,
+        messages:[{role:'user',content:[
+          {type:'document',source:{type:'base64',media_type:'application/pdf',data:b64Data}},
+          {type:'text',text:'Extract ALL fields from this Amway job PDF. Return ONLY valid JSON, no markdown, no backticks. Schema: {"jobId":<number>,"date":"<YYYY-MM-DD>","time":"<as shown>","address":"<full address>","customerName":"<full name>","aboId":"<ABO/APC ID>","email":"","phone":"<phone>","sku":"<SKU>","productDescription":"<product desc>","serialNumber":"<serial>","warrantyStatus":"<In-warranty or Out-of-warranty>","salesOrder":"<sales order>","remarks":"<comment/remarks>","jobType":"<Installation|Breakdown / Repair|Filter Replacement|Routine Maintenance|Inspection|Warranty Claim>"}'}
+        ]}]})
+    });
+    if(resp.ok){
+      const data=await resp.json();
+      if(data.content){
+        const text=data.content.map(c=>c.text||'').join('');
+        const parsed=JSON.parse(text.replace(/```json|```/g,'').trim());
+        if(parsed.jobId)return parsed;
+      }
+    }
+  }catch(e){console.warn('Claude API failed, using fallback parser:',e);}
+  // Fallback: use pdf.js to extract text then parse with regex
+  return await parsePDFWithFallback(pdfBase64);
+}
+
+async function parsePDFWithFallback(pdfBase64){
+  // Load pdf.js
+  if(!window.pdfjsLib){
+    const s=document.createElement('script');
+    s.src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+    document.head.appendChild(s);
+    await new Promise(r=>{s.onload=r;s.onerror=()=>r();});
+    if(window.pdfjsLib)pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  }
+  if(!window.pdfjsLib)throw new Error('PDF library not available');
+
+  const b64=pdfBase64.split(',')[1];
+  const raw=atob(b64);
+  const arr=new Uint8Array(raw.length);
+  for(let i=0;i<raw.length;i++)arr[i]=raw.charCodeAt(i);
+
+  const pdf=await pdfjsLib.getDocument({data:arr}).promise;
+  // Extract all text items with positions for table reconstruction
+  let items=[];
+  for(let i=1;i<=pdf.numPages;i++){
+    const page=await pdf.getPage(i);
+    const tc=await page.getTextContent();
+    tc.items.forEach(it=>{
+      if(it.str.trim())items.push({text:it.str.trim(),x:Math.round(it.transform[4]),y:Math.round(it.transform[5])});
+    });
+  }
+  // Sort by y descending (top of page first), then x ascending
+  items.sort((a,b)=>b.y-a.y||a.x-b.x);
+
+  // Build lines by grouping items with similar y values
+  const lines=[];
+  let curLine=[];let curY=null;
+  items.forEach(it=>{
+    if(curY===null||Math.abs(it.y-curY)>5){
+      if(curLine.length)lines.push(curLine.map(c=>c.text).join(' '));
+      curLine=[it];curY=it.y;
+    }else{curLine.push(it);}
   });
-  const data=await resp.json();
-  const text=data.content.map(c=>c.text||'').join('');
-  return JSON.parse(text.replace(/```json|```/g,'').trim());
+  if(curLine.length)lines.push(curLine.map(c=>c.text).join(' '));
+
+  const fullText=lines.join('\n');
+  console.log('PDF text extracted:',fullText);
+
+  // Parse with improved regex
+  const r={};
+
+  // Job ID
+  const jm=fullText.match(/Job\s*ID\s*(\d+)/i);
+  if(jm)r.jobId=parseInt(jm[1]);
+
+  // Date: DD/MM/YYYY
+  const dm=fullText.match(/Date[:\s]*(\d{1,2})\/(\d{1,2})\/(\d{4})/i);
+  if(dm)r.date=dm[3]+'-'+dm[2].padStart(2,'0')+'-'+dm[1].padStart(2,'0');
+
+  // Time
+  const tm=fullText.match(/Time[:\s]*([^\n]+)/i);
+  if(tm)r.time=tm[1].replace(/Address.*/i,'').trim();
+
+  // Address - everything after "Address:" until end of that section
+  const am=fullText.match(/Address[:\s]*(.+?)(?=COLLECTION|Job\s*ID|\n\n)/is);
+  if(am)r.address=am[1].replace(/\n/g,' ').replace(/COLLECTION/gi,'').trim();
+
+  // Serial Number (pattern: digits followed by letters like NABC, KAAC, etc)
+  const sm=fullText.match(/(\d{6,15}[A-Z]{3,4})/);
+  if(sm)r.serialNumber=sm[1];
+
+  // SKU (6-digit number near product description)
+  const skm=fullText.match(/(\d{6})\s+\d{6}/);
+  if(skm)r.sku=skm[1];
+
+  // Product description - look for "ASG" pattern or text between SKU and serial
+  const dscm=fullText.match(/ASG\s*[-–]\s*([^,\n]+)/i);
+  if(dscm)r.productDescription=dscm[1].trim();
+  else{
+    // Try to find product name near serial number
+    const pdm=fullText.match(/(\d{6})\s+([\w\s-]+?(?:Water|Purifier|Filter|Air|eSpring|Atmosphere|Neptune)[^\n]*)/i);
+    if(pdm)r.productDescription=pdm[2].trim();
+  }
+
+  // Warranty Status
+  if(/In-warranty|In warranty/i.test(fullText))r.warrantyStatus='In-warranty';
+  else if(/Out.of.warranty/i.test(fullText))r.warrantyStatus='Out-of-warranty';
+
+  // Sales Order (10+ digit number)
+  const som=fullText.match(/(\d{10,13})/);
+  if(som)r.salesOrder=som[1];
+
+  // ABO/APC ID and Customer Name - look in contacts table area
+  // Pattern: 7-13 digit number followed by name in caps
+  const contactArea=fullText.match(/ABO.*?ID[\s\S]*?(\d{7,13})\s+([A-Z][A-Z\s]+[A-Z])/);
+  if(contactArea){r.aboId=contactArea[1];r.customerName=contactArea[2].trim();}
+  // Alternative: find name and number near each other
+  if(!r.customerName){
+    const nm=fullText.match(/(\d{7,13})\s+([A-Z][A-Z\s]{3,}[A-Z])\s/);
+    if(nm){r.aboId=nm[1];r.customerName=nm[2].trim();}
+  }
+
+  // Phone (8-digit Singapore number)
+  const pm=fullText.match(/(?:Phone|Contact|HP)[\s:]*(\d{8})/i)||fullText.match(/(\d{8})\s*$/m);
+  if(pm)r.phone=pm[1];
+
+  // Remarks - text after Job ID line that isn't a table header
+  const remarkLines=[];
+  let foundJobId=false;
+  lines.forEach(l=>{
+    if(/Job\s*ID/i.test(l)){foundJobId=true;return;}
+    if(foundJobId&&!/Repair|SKU|Description|Serial|Warranty|Sales|Contact|ABO|Name|Email|Phone|Comment|acknowledge|Signature|Printed|Date|Time|Address/i.test(l)){
+      const cleaned=l.trim();
+      if(cleaned&&cleaned.length>2)remarkLines.push(cleaned);
+      foundJobId=false; // only take first line after Job ID
+    }
+  });
+  if(remarkLines.length)r.remarks=remarkLines[0];
+
+  // Also check Comment/Remarks section
+  const cm=fullText.match(/Comment\s*\/?\s*Remarks?\s*\n?\s*(.+?)(?:\n\s*I acknowledge|$)/is);
+  if(cm&&cm[1].trim())r.remarks=cm[1].trim();
+
+  // Job type from remarks
+  const rt=(r.remarks||r.productDescription||'').toLowerCase();
+  if(/install/i.test(rt))r.jobType='Installation';
+  else if(/filter|cartridge/i.test(rt))r.jobType='Filter Replacement';
+  else if(/maintenance|cleaning/i.test(rt))r.jobType='Routine Maintenance';
+  else r.jobType='Breakdown / Repair';
+
+  r.email='';
+  return r;
 }
 
 // ===== GOOGLE SHEETS AUTO-SYNC (daily) =====
