@@ -275,8 +275,6 @@ tr:last-child td{border-bottom:none}
       <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>Dashboard</button>
     <button class="ni" data-page="jobs" onclick="showPage('jobs')">
       <svg viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>Jobs<span class="nbw" id="jobCt">0</span></button>
-    <button class="ni" data-page="reports" onclick="showPage('reports')">
-      <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>Service Reports<span class="nb" id="repCt">0</span></button>
     <button class="ni" data-page="customers" onclick="showPage('customers')">
       <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Customers</button>
     <button class="ni" data-page="appliances" onclick="showPage('appliances')">
@@ -398,6 +396,8 @@ function loadDB(){
     ensureDefaultUsers();
     // seed sample data on first load
     if(!DB.custs.length&&!DB.parts.length){seedSample();}
+    // Import Google Sheets customer data (runs once)
+    if(typeof importGoogleSheetsData==='function')importGoogleSheetsData();
   }catch(e){console.error(e);}
 }
 
@@ -839,6 +839,268 @@ function seedSample(){
   DB.nextIds.p=8;
 }
 
+// ===== GOOGLE SHEETS IMPORT (one-time) =====
+function importGoogleSheetsData(){
+  if(localStorage.getItem('amwayCRM_gsheets_v2'))return;
+  const now=Date.now();
+  const custs=[
+    {name:'Kang Thia Kuang (Steven)',ada:'9228786',address:'102 edgedale plains #07-45 s 828691',phone:'',joined:'2025-09-03'},
+    {name:'Shalet Lee Huay Shan',ada:'7007837078',address:'9 scotts rd, scott medical centre, pacific plaza',phone:'',joined:'2025-09-03'},
+    {name:'Miko Law Xiu Yu',ada:'',address:'8 kallang ave, aperia tower 1 #04-01 s 339509',phone:'',joined:'2025-09-13'},
+    {name:'Susan Khong (Liow Mooi Hah)',ada:'9227628',address:'16 nathan rd, nathan place #03-01 s 2487',phone:'',joined:'2025-10-22'},
+    {name:'Suelyn Poh (shop manager)',ada:'',address:'12 kallang ave, aperia mall #02-01 s 3395',phone:'',joined:'2025-11-04'},
+    {name:'Chan Teck Swee Stephen',ada:'7026106282',address:'55 mimosa terrace s 805746',phone:'',joined:'2025-11-10'},
+    {name:'Thian Fang Yii',ada:'1196484',address:'462 sembawang drive #16-219 s 750662',phone:'',joined:'2025-11-11'},
+    {name:'See Swee Kiat',ada:'7014790109',address:'521 bedok north ave 1 #08-304 s 460521',phone:'',joined:'2025-11-14'},
+    {name:'Chiam Peak Yoke',ada:'9154377',address:'326 hougang ave 7 #05-331 s 530326',phone:'',joined:'2025-11-14'},
+    {name:'Yeo Heng Jong (Stella)',ada:'9157033',address:'751 pasir ris st. 71 #14-76 s 510751',phone:'',joined:'2025-11-15'},
+    {name:'Lee Pui Kee',ada:'7009625112',address:'18 siglap link #06-35 seaside residences',phone:'',joined:'2025-11-18'},
+    {name:'Cai Ruihong',ada:'9141769',address:'63 Tengah Garden Walk #07-25 s 699892',phone:'',joined:'2025-11-21'},
+    {name:'Lin Hua Jessie',ada:'9148697',address:'17 pasir ris groove, coco palms #04-19 s 518143',phone:'98578308',joined:'2025-11-22'},
+    {name:'Juliana Kusumawati',ada:'9115263',address:'632 veerasamy road #19-106 s 200632',phone:'',joined:'2025-11-24'},
+    {name:'Lau Sin Ling',ada:'7010401048',address:'115 holland grove view s 276272',phone:'',joined:'2025-11-24'},
+    {name:'Ho Eng Keat',ada:'9046538',address:'510 hougang ave 10 #02-191 s 530510',phone:'',joined:'2025-11-25'},
+    {name:'Lee Chui Hah',ada:'9000641',address:'301B anchorvale drive #15-57 s 542301',phone:'',joined:'2025-11-25'},
+    {name:'Tan Mei Lee (Lily Mary)',ada:'9040394',address:'84 Corporation Road Lakeholmz #11-07',phone:'',joined:'2025-11-25'},
+    {name:'Ng Chong Yee',ada:'7189906',address:'633 ang mo kio ave 6 #04-5153 s 560633',phone:'',joined:'2025-11-28'},
+    {name:'Chua Hiang Huay (Desmond Tay)',ada:'9027927',address:'646 jalan tenaga #04-111 s 410646',phone:'',joined:'2025-12-01'},
+    {name:'Raymond Quan Yew Meng',ada:'9192796',address:'28 Mei Hwan Drive, Singapore 568363',phone:'',joined:'2025-12-02'},
+    {name:'Sally Sim',ada:'9256138',address:'103 Jalan Lim Tai See SG 268438',phone:'96333248',joined:'2025-12-18'},
+    {name:'SEAH BOON KENG',ada:'107519476',address:'201 JALAN LOYANG BESAR #03-10 SINGAPORE 509506',phone:'98394194',joined:'2025-12-18'},
+    {name:'Rafiq Ahmad',ada:'7026468015',address:'Blk 5 Verdun Road, #04-02 Singapore 207274',phone:'98501152',joined:'2025-12-22'},
+    {name:'Mr. Suria (Ivy)',ada:'9256138',address:'16 Whampoa East, Eight River Suites, SG 338524',phone:'91885636',joined:'2025-12-22'},
+    {name:'Ng Chie Hong (Sally)',ada:'9190642',address:'Blk 512 Ang Mo Kio Avenue 8 #09-2512 SG 560512',phone:'97581348',joined:'2025-12-23'},
+    {name:'Miss Karen',ada:'9061545',address:'240 Westwood Avenue, The Floravale #11-46 SG 648364',phone:'80952979',joined:'2025-12-23'},
+    {name:'Shi Yun',ada:'9215174',address:'Blk 809A Choa Chu Kang Ave 1,#06-620, S681809',phone:'96632519',joined:'2025-12-24'},
+    {name:'Ms. P. Vijaya',ada:'7025080767',address:'Blk 203 Yishun Street 21 #12-235, S760203',phone:'93827753',joined:'2025-12-27'},
+    {name:'LOW LAI YOKE SUSAN',ada:'9256138',address:'68 Upper Serangoon View #12-20 Kingsford Waterbay SG 533884',phone:'98626963',joined:'2025-12-29'},
+    {name:'Germanda (Patricia Ong)',ada:'7008531192',address:'Blk 317A Tengah Road #08-567 Singapore 691317',phone:'97436413',joined:'2025-12-29'},
+    {name:'PANG KHEE WAN',ada:'50004007115',address:'Blk 443B Fernvale Road, #27-359, S792443',phone:'94508309',joined:'2025-12-30'},
+    {name:'BENNY LIU',ada:'7013706315',address:'Blk 171 Stirling road #11-1109 (S) 141017',phone:'93249555',joined:'2025-12-30'},
+    {name:'Vanessa Foo',ada:'9256138',address:'',phone:'81126366',joined:'2025-03-26'},
+    {name:'Surakutty Manjumole',ada:'9022553',address:'',phone:'94881256',joined:'2025-03-30'},
+    {name:'Mr Chew',ada:'',address:'',phone:'96816222',joined:'2025-03-31'},
+    {name:'Ong Khiang Cheng (Casey)',ada:'',address:'',phone:'97240579',joined:'2025-04-01'},
+    {name:'Guo Ying',ada:'',address:'',phone:'',joined:''},
+    {name:'Belle Lee',ada:'9256138',address:'',phone:'97621449',joined:'2025-04-09'},
+    {name:'Ow Shin Ling',ada:'',address:'',phone:'80215105',joined:'2025-04-07'},
+    {name:'Halim (daughter Hanisah)',ada:'9057991',address:'',phone:'97394791',joined:'2025-04-13'},
+    {name:'See Pei Ling',ada:'7728350',address:'',phone:'88209518',joined:'2025-04-18'},
+    {name:'Lee Li Ying',ada:'7011485723',address:'',phone:'94506675',joined:'2025-04-20'},
+    {name:'Chong Xin Ru',ada:'7865960',address:'',phone:'81570376',joined:'2025-04-21'},
+    {name:'Mdm Tan Im Neo',ada:'9035719',address:'',phone:'97282816',joined:'2025-04-21'},
+    {name:'Wong Foong Sin',ada:'9107422',address:'',phone:'81781030',joined:'2025-04-27'},
+    {name:'Serene Hah',ada:'7010839694',address:'',phone:'96454893',joined:'2025-04-28'},
+    {name:'Mr Lee (Vincent)',ada:'7027354166',address:'',phone:'97737170',joined:'2025-04-30'},
+    // ABO 2025 rows 23-34 (previously missed)
+    {name:'Teong Kar Lee',ada:'7026312276',address:'119, Tampines Street 86, #10-02 parc central s 528513',phone:'',joined:'2025-12-03'},
+    {name:'Wong Chuee Ching Sally',ada:'7012845455',address:'Blk 128 Bukit Merah View,#17-44 Singapore 150128',phone:'',joined:'2025-12-04'},
+    {name:'Ong Swee Choo',ada:'7010794898',address:'BLK 15 FARRER PARK ROAD #25-39 SINGAPORE 210015',phone:'',joined:'2025-12-10'},
+    {name:'Mallare Lenny F',ada:'7025034296',address:'Blk 134 Pasir Ris Street 11 #02-257 SG 510134',phone:'',joined:'2025-12-11'},
+    {name:'Ngiam Sung Juat (Doris)',ada:'7026403417',address:'Blk 120 Bukit Batok Central #04-355 SG 650120',phone:'',joined:'2025-12-12'},
+    {name:'Ong Poh Choo (Miss Susan)',ada:'9210815',address:'Blk 305 Tampines St 32 #09-86 SG 520305',phone:'',joined:'2025-12-12'},
+    {name:'Yoki Yan',ada:'7023817121',address:'Blk 23, Bedok South Ave 1, #06-773, S(460023)',phone:'',joined:'2025-12-12'},
+    {name:'Ms. Wong',ada:'9137934',address:'Blk 14 Marine Terrace #13-184 SG 440014',phone:'',joined:'2025-12-15'},
+    {name:'Giam Siew Hwa',ada:'9201874',address:'Blk 167 Hougang Ave 1 #07-1562 SG 530167',phone:'',joined:'2025-12-15'},
+    {name:'TESSA PHANG SHYN LI',ada:'7026396776',address:'9, Geylang East Avenue 1, TRE Residences, #07-11 Singapore',phone:'',joined:'2025-12-16'},
+    // ABO 2026 - JANUARY
+    {name:'He Min',ada:'7023431014',address:'Blk 64 Telok Blangah Drive #03-19',phone:'',joined:'2026-01-07'},
+    {name:'Wong Fah Lee',ada:'9115728',address:'29 Terang Bulan Avenue S 455552',phone:'',joined:'2026-01-08'},
+    {name:'Lyndon Lee',ada:'7024509538',address:'Block 484, Tampines Street 43, #01',phone:'',joined:'2026-01-08'},
+    {name:'Sim Siaw Ling',ada:'9008737',address:'52A Toh Tuck Road, Signature Park',phone:'',joined:'2026-01-08'},
+    {name:'GOH AIK HUANG',ada:'9147453',address:'Blk 208 Bukit Batok St 21 #05-132',phone:'',joined:'2026-01-09'},
+    {name:'GOH YENG PENG, Gleena',ada:'7012400491',address:'7 jurong east st 32, #11-07, S 6094',phone:'',joined:'2026-01-09'},
+    {name:'Mavis Tsoi',ada:'9049081',address:'1 Farrer Drive, #03-02, Sommervil',phone:'',joined:'2026-01-09'},
+    {name:'Mrs Tan',ada:'9050830',address:'11 Sengkang Square #05-40 Com',phone:'',joined:'2026-01-12'},
+    {name:'May Lim Jia Jia',ada:'7017487552',address:'BLK 298B Compassvale Street, Cr',phone:'',joined:'2026-01-13'},
+    {name:'TEO JIA XUAN',ada:'9177890',address:'Blk 957D Tampines Street 96 #07',phone:'',joined:'2026-01-14'},
+    {name:'Zhai Ling Xi',ada:'7007095719',address:'115 Seletar Green View, S805111',phone:'',joined:'2026-01-14'},
+    {name:'LIU ZHIFANG',ada:'9254498',address:'BLK 468-C ADMIRALTY DRIVE #',phone:'',joined:'2026-01-16'},
+    {name:'Juliana Tay',ada:'9088781',address:'Blk 315 Bukit Batok Street 32 #07',phone:'',joined:'2026-01-16'},
+    {name:'Siew Su Chuen',ada:'7024722227',address:'587 east coast road, #03-03, AUR',phone:'',joined:'2026-01-17'},
+    {name:'SHIRLI GOH',ada:'7023772391',address:'16, SIGLAP LINK SEASIDE RESII',phone:'',joined:'2026-01-19'},
+    {name:'Low Mei Yee',ada:'9207930',address:'Blk 230A Tengah Drive #03-467 S',phone:'',joined:'2026-01-19'},
+    {name:'CHUA CHIEW YEN',ada:'9052582',address:'Blk 55 Geylang Bahru #24-3607 S',phone:'',joined:'2026-01-20'},
+    {name:'Ho Wai Loong',ada:'7010631250',address:'Blk 535 Ang Mo Kio Ave 5 #06-40',phone:'',joined:'2026-01-24'},
+    {name:'TANG@TAN HOI MIN',ada:'9205701',address:'Blk 651, Woodlands Ring Road, #',phone:'',joined:'2026-01-26'},
+    {name:'NG LEE LEE',ada:'9043556',address:'45 Lim Tai See Walk Selby Garden',phone:'',joined:'2026-01-27'},
+    {name:'Serena Chee',ada:'7026617054',address:'Blk 575 Woodlands Dr 16 #07-528',phone:'',joined:'2026-01-30'},
+    {name:'Judy Ng',ada:'50003982171',address:'Blk 738 Bedok Reservoir Road Wa',phone:'',joined:'2026-01-31'},
+    // ABO 2026 - FEBRUARY
+    {name:'Kwok Hui Ying',ada:'9035534',address:'Blk 663 Buffalo Road #12-09 Sing',phone:'',joined:'2026-02-02'},
+    {name:'Ms. Laura',ada:'',address:'Blk 313B #14-110 Anchorvale Roa',phone:'',joined:'2026-02-03'},
+    {name:'Choa Anne / FuDe Fashi',ada:'7026727386',address:'39 Lor 12 Geylang, Singapore 399',phone:'',joined:'2026-02-04'},
+    {name:'Ong Chee Wee',ada:'7018584997',address:'Blk 12 Toa Payoh Lorong 7#05-47',phone:'',joined:'2026-02-04'},
+    {name:'GEETHALAKSHMI',ada:'7020774002',address:'Blk 984B Buangkok Link #01-15 S',phone:'',joined:'2026-02-05'},
+    // ABO 2026 - MARCH
+    {name:'Hwee Kok',ada:'Product owner',address:'Blk 722 Jurong West ave 5 #07-12',phone:'',joined:'2026-03-13'},
+    {name:'Faith Chia',ada:'9231937',address:'117 Compassvale Bow, Esparina R',phone:'',joined:'2026-03-17'},
+    {name:'Jane',ada:'NIL',address:'33, FABER WALK, FABER HILLS',phone:'',joined:'2026-03-19'},
+    {name:'YING FANG CHEN',ada:'7027064850',address:'23 Marina Way, Marina One Resid',phone:'',joined:'2026-03-19'},
+    {name:'MR LOH PUAY KOON',ada:'Product owner',address:'Blk 707 Choa Chu Kang Street 53',phone:'',joined:'2026-03-24'},
+    {name:'CHOO KIM NYIT',ada:'9225061',address:'Blk 688A Choa Chu Kang Drive #0',phone:'',joined:'2026-03-24'},
+    {name:'Lim Pei Lin Olivia',ada:'9049920',address:'Blk 171 Bukit Batok West Ave 8, #',phone:'',joined:'2026-03-24'},
+    {name:'Ms. Sandy',ada:'Product owner',address:'Blk 123 Tampines Street 86 #13-1',phone:'',joined:'2026-03-30'},
+    {name:'ALBERT SUDIRGO',ada:'9209733',address:'66 Mei Hwan Drive (Goldenhill Pa',phone:'',joined:'2026-03-31'},
+    {name:'PEI JIA EN',ada:'7010974157',address:'Blk 156A bishan St 11 #08-104 SG',phone:'',joined:'2026-03-31'},
+    // ABO 2026 - APRIL
+    {name:'Margaret Lim',ada:'Product owner',address:'3 Rivervale Link #04-31 The Rive',phone:'',joined:'2026-04-01'},
+    {name:'BIAN WEE FUN RHONDA',ada:'7026269606',address:'242 Bukit Panjang Ring Road #04',phone:'',joined:'2026-04-01'},
+    {name:'Goh Bee Choo',ada:'9206210',address:'Blk 425 Ang Mo Kio Avenue 3 #08',phone:'',joined:'2026-04-01'},
+    {name:'SEOW SIEW ENG JOYCE',ada:'Product owner',address:'BLK 898A #13-768, TAMPINES ST',phone:'',joined:'2026-04-06'},
+    {name:'Koh Yueh Siang (Stephen)',ada:'9186912',address:'Blk 312C Clementi Ave 4 #02-191',phone:'',joined:'2026-04-08'},
+    {name:'Ms. Shi Zhen Zhen',ada:'',address:'Blk 644 Woodlands Ring Road #1',phone:'',joined:'2026-04-09'},
+    {name:'Ms. Thiri',ada:'',address:'Blk 2 Ghim Moh Road #14-322 SG',phone:'',joined:'2026-04-10'},
+    {name:'Dennis Lam Kok Wei',ada:'7013367411',address:'Blk 119B Rivervale Drive #09-324',phone:'',joined:'2026-04-11'},
+    {name:'Wilson Tan Cheak Liang',ada:'7026727915',address:'Blk 825, #03-586, Yishun St 81, S',phone:'',joined:'2026-04-11'},
+    {name:'YAO KIM CHUAN',ada:'7027151848',address:'Blk 116 YISHUN RING ROAD #09',phone:'',joined:'2026-04-11'},
+    {name:'Quah Siew Geok (KE XIUYU)',ada:'9126352',address:'Blk 653 Yishun Ave 4,#05-453 S(7',phone:'',joined:'2026-04-11'},
+    {name:'CHONG YUET CHENG',ada:'7027236556',address:'BLK 3 BEACH ROAD, 12/4823 SG',phone:'',joined:'2026-04-13'},
+    {name:'Ramana BTV',ada:'7020291853',address:'456 Corporation Road Tower 4 Un',phone:'',joined:'2026-04-15'},
+    {name:'Amy LEE SIEW KEW',ada:'9247109',address:'89 Bedok North Street 4 #01-103 S',phone:'',joined:'2026-04-15'},
+    {name:'YEE YOKE YING',ada:'9151769',address:'BLK 156, PASIR RIS ST 13, #05-3',phone:'',joined:'2026-04-17'},
+    {name:'MADENRAJ',ada:'7020640423',address:'BLK 557, CHOA CHU KANG NOR',phone:'',joined:'2026-04-17'},
+    {name:'PEH SHIR LING',ada:'7022498281',address:'Blk 420 HOUGANG AVENUE 10, a',phone:'',joined:'2026-04-18'},
+    {name:'KESAVAN S/O RAMAYA',ada:'9016758 / 7021680886',address:'50 Toa Payoh Lorong 5 #04-65 SG',phone:'',joined:'2026-04-18'},
+    {name:'Caroline (Marian Tan)',ada:'7006744335',address:'Blk 114 Pasir Ris St. 11 #09-581 S',phone:'',joined:'2026-04-20'},
+    {name:'NG CHING CHING',ada:'7009537293',address:'77, CIRCUIT ROAD,BALAM GAR',phone:'',joined:'2026-04-21'},
+    {name:'Ho Qing Ying, Jean',ada:'9019118',address:"27 Duke's Road #01-09 Dukes Re",phone:'',joined:'2026-04-23'},
+    {name:'LIU GUO YING',ada:'9246059',address:'BLK 174, LORONG 1 TOA PAYOH',phone:'',joined:'2026-04-23'},
+    {name:'Tricia Low (ANG HWEE KOON)',ada:'7021979050',address:'Blk 91A, Jalan Satu, #16-70, S391',phone:'',joined:'2026-04-24'},
+    {name:'YANG CHEE MENG',ada:'7192687',address:'BLK 361 #08-121, YUNG AN ROA',phone:'',joined:'2026-04-24'},
+    {name:'Ella Yap Sin Yen',ada:'7026923948',address:'Blk 996A buangkok crescent #07-8',phone:'',joined:'2026-04-25'},
+    {name:'Chew Bee Kim',ada:'7019431570',address:'Blk 19 Marine Terrace Marine Terr',phone:'',joined:'2026-04-27'},
+    {name:'Tan Dan Nian',ada:'9130206',address:'Blk 224 Toa Payoh Lor 8 #18-759',phone:'',joined:'2026-04-29'},
+    {name:'Wong Song Ern / Lily Ng',ada:'9241852',address:'7 Simei Street 3, Tower 2C East p',phone:'',joined:'2026-04-29'},
+    {name:'Judy Teo',ada:'7024747123',address:'Blk 229 Serangoon Ave 4, #10-29',phone:'',joined:'2026-04-29'},
+    {name:'Jamin Hidajat',ada:'9005531',address:'1 Sin Ming Walk #14-33 SG 57557',phone:'',joined:''}
+  ];
+  // Deduplicate by name against existing DB
+  custs.forEach(c=>{
+    if(!c.name)return;
+    const exists=DB.custs.find(x=>x.name===c.name);
+    if(!exists){
+      DB.custs.push({id:DB.nextIds.c++,name:c.name,ada:c.ada,address:c.address,phone:c.phone,email:'',joined:c.joined||'',_modifiedAt:now});
+    }
+  });
+  markTouched('custs');
+  // Appliances from walk-in tab
+  const apps=[
+    {customer:'Vanessa Foo',model:'Atmosphere 101076-M',serial:'090610168Q1AA'},
+    {customer:'Surakutty Manjumole',model:'eSpring 100188',serial:'071620281AAA'},
+    {customer:'Mr Chew',model:'eSpring 100188',serial:'241410516KAAC'},
+    {customer:'Ong Khiang Cheng (Casey)',model:'eSpring 100188',serial:'112001179JAAA'},
+    {customer:'Guo Ying',model:'eSpring 100188',serial:'201320048DAAM'},
+    {customer:'Belle Lee',model:'eSpring 100188',serial:'111920504IAAA'},
+    {customer:'Ow Shin Ling',model:'Atmosphere Mini',serial:''},
+    {customer:'Halim (daughter Hanisah)',model:'eSpring 100188',serial:'171010146DAAM'},
+    {customer:'See Pei Ling',model:'Atmosphere Sky',serial:'201890287JAAM'},
+    {customer:'Lee Li Ying',model:'Atmosphere Mini Sky',serial:'232120053DAAC'},
+    {customer:'Chong Xin Ru',model:'eSpring 100188',serial:'212280244HAAC'},
+    {customer:'Mdm Tan Im Neo',model:'ATS 101076',serial:'143300262GAAM'},
+    {customer:'Mdm Tan Im Neo',model:'Atmosphere Sky',serial:'181140185JAAM'},
+    {customer:'Mdm Tan Im Neo',model:'Atmosphere Sky',serial:'200620037JAAM'},
+    {customer:'Wong Foong Sin',model:'eSpring 100188',serial:'01940368BAAA'},
+    {customer:'Serene Hah',model:'eSpring 100188',serial:'213160374HAAC'},
+    {customer:'Mr Lee (Vincent)',model:'eSpring 100188',serial:'121980526AAA'}
+  ];
+  apps.forEach(a=>{
+    if(!a.model)return;
+    const cust=DB.custs.find(c=>c.name===a.customer);
+    if(!cust)return;
+    // Skip if appliance with same serial already exists
+    if(a.serial&&DB.appliances.find(x=>x.serial===a.serial))return;
+    DB.appliances.push({id:DB.nextIds.a++,custId:cust.id,model:a.model,serial:a.serial||'N/A',installDate:'',warrantyMonths:12,location:'',_modifiedAt:now});
+  });
+  markTouched('appliances');
+
+  // === JOBS from all 3 tabs ===
+  const jobs=[
+    // ABO 2025
+    {jobId:2263,customer:'Kang Thia Kuang (Steven)',date:'2025-09-03',time:'11:00',warrantyOut:'x',quoteNum:'2311',paymentStatus:'Paid',fault:'Espring: Red light blinking and beeping sound',repair:'change adapter',type:'Breakdown / Repair'},
+    {jobId:2308,customer:'Shalet Lee Huay Shan',date:'2025-09-03',time:'15:00',warrantyIn:'x',quoteNum:'2357/2358',paymentStatus:'Paid',fault:'Espring: Red light blinking and beeping sound',repair:'change filter',type:'Breakdown / Repair'},
+    {jobId:2221,customer:'Miko Law Xiu Yu',date:'2025-09-13',time:'11:00',fault:'Change filter cartridge and service Neptune eSpring',type:'Filter Replacement'},
+    {jobId:2238,customer:'Susan Khong (Liow Mooi Hah)',date:'2025-10-22',time:'10:00',warrantyOut:'x',quoteNum:'2284',paymentStatus:'Collected cash $58',fault:'Espring: Beeping sound',type:'Breakdown / Repair'},
+    {jobId:2269,customer:'Suelyn Poh (shop manager)',date:'2025-11-04',time:'11:00',quoteNum:'2318',fault:'faucet leaking issue',repair:'change faucet',type:'Breakdown / Repair'},
+    {jobId:2278,customer:'Chan Teck Swee Stephen',date:'2025-11-10',time:'15:00',warrantyIn:'x',quoteNum:'2326',paymentStatus:'FOC',fault:'Neptune: Installation',repair:'installation',type:'Installation'},
+    {jobId:2285,customer:'Thian Fang Yii',date:'2025-11-11',time:'15:30',warrantyIn:'x',quoteNum:'2325',paymentStatus:'Paid $38',fault:'Leaking from the bottom of unit',type:'Breakdown / Repair'},
+    {jobId:2386,customer:'See Swee Kiat',date:'2025-11-14',time:'11:00',warrantyIn:'x',quoteNum:'2455',paymentStatus:'Collected cash $38',fault:'Atmosphere: HEPA filter red light, already changed',type:'Breakdown / Repair'},
+    {jobId:2293,customer:'Chiam Peak Yoke',date:'2025-11-14',time:'15:00',warrantyOut:'x',quoteNum:'2338',paymentStatus:'Paid $58',fault:'Beeping and cup red colour',type:'Breakdown / Repair'},
+    {jobId:2294,customer:'Yeo Heng Jong (Stella)',date:'2025-11-15',time:'10:30',warrantyOut:'x',quoteNum:'2339',paymentStatus:'Paid $58',fault:'No water after installing of cartridge',type:'Breakdown / Repair'},
+    {jobId:2302,customer:'Lee Pui Kee',date:'2025-11-18',time:'11:00',warrantyIn:'x',quoteNum:'2349',paymentStatus:'Paid $38',fault:'beeping sound after replacement of filter',type:'Breakdown / Repair'},
+    {jobId:2305,customer:'Cai Ruihong',date:'2025-11-21',time:'14:00',warrantyIn:'x',quoteNum:'2353',paymentStatus:'FOC',fault:'Installation for eSpring',repair:'installation',type:'Installation'},
+    {jobId:2304,customer:'Lin Hua Jessie',date:'2025-11-22',time:'10:00',warrantyOut:'x',quoteNum:'2352',paymentStatus:'Pending',fault:'eSpring: Faucet is leaking at base',repair:'Replace faucet',type:'Breakdown / Repair'},
+    {jobId:2306,customer:'Juliana Kusumawati',date:'2025-11-24',time:'11:00',warrantyOut:'x',quoteNum:'2354',paymentStatus:'Paid $58 / Cash $80',fault:'atmosphere: unable to turn on',type:'Breakdown / Repair'},
+    {jobId:2295,customer:'Lau Sin Ling',date:'2025-11-24',time:'15:00',warrantyIn:'x',quoteNum:'2340 / 2457',paymentStatus:'FOC by Amway',fault:'Unable to connect to Bluetooth',repair:'replace one EM FOC',remarks:'FOC in-home service',type:'Breakdown / Repair'},
+    {jobId:2316,customer:'Ho Eng Keat',date:'2025-11-25',time:'11:00',warrantyIn:'x',paymentStatus:'FOC - installation',fault:'eSpring Neptune: Installation',type:'Installation'},
+    {jobId:2309,customer:'Lee Chui Hah',date:'2025-11-25',time:'14:00',warrantyIn:'x',quoteNum:'2359',paymentStatus:'Paid $38',fault:'eSpring: red light blinking and beeping noises',type:'Breakdown / Repair'},
+    {jobId:2315,customer:'Tan Mei Lee (Lily Mary)',date:'2025-11-25',time:'11:00',warrantyOut:'x',quoteNum:'2365',paymentStatus:'Cash $58',fault:'Espring: red Light blinking and beeping noises',type:'Breakdown / Repair'},
+    {jobId:2321,customer:'Ng Chong Yee',date:'2025-11-28',time:'11:00',warrantyIn:'x',quoteNum:'2373',paymentStatus:'FOC - installation',fault:'eSpring Neptune Installation',type:'Installation'},
+    {jobId:2322,customer:'Chua Hiang Huay (Desmond Tay)',date:'2025-12-01',time:'11:00',warrantyIn:'x',quoteNum:'2374',paymentStatus:'FOC - installation',fault:'eSpring Neptune Installation',type:'Installation'},
+    {jobId:2324,customer:'Raymond Quan Yew Meng',date:'2025-12-02',time:'11:00',warrantyIn:'x',quoteNum:'2379',paymentStatus:'FOC - installation',fault:'Neptune Installation',repair:'UV light faulty',remarks:'New set with UV light faulty',type:'Installation'},
+    {jobId:2325,customer:'Teong Kar Lee',date:'2025-12-03',time:'11:00',warrantyIn:'x',quoteNum:'2381',paymentStatus:'FOC - installation',fault:'Neptune Installation',remarks:'Change filter',type:'Installation'},
+    {jobId:2330,customer:'Wong Chuee Ching Sally',date:'2025-12-04',time:'14:00',warrantyIn:'x',quoteNum:'2338',paymentStatus:'FOC - installation',fault:'eSpring Neptune: Installation',type:'Installation'},
+    {jobId:2382,customer:'Ong Swee Choo',date:'2025-12-10',time:'14:00',warrantyOut:'x',paymentStatus:'paid $58',fault:'Atmosphere: Red Light on filter and system icon',repair:'Replace filter - FOC',remarks:'2nd trip to change the filter',type:'Breakdown / Repair'},
+    {jobId:2340,customer:'Mallare Lenny F',date:'2025-12-11',time:'14:00',warrantyIn:'x',fault:'eSpring: beeping when water is dispensed and red light',type:'Breakdown / Repair'},
+    {jobId:2341,customer:'Ngiam Sung Juat (Doris)',date:'2025-12-12',time:'11:00',warrantyOut:'x',quoteNum:'2402',paymentStatus:'paid $58',fault:'Espring: change diverter and cartridge',repair:'ABO provide diverter and cartridge',type:'Breakdown / Repair'},
+    {jobId:2339,customer:'Ong Poh Choo (Miss Susan)',date:'2025-12-12',time:'13:30',warrantyOut:'x',quoteNum:'2400',paymentStatus:'paid $58',fault:'Espring to change cartridge',repair:'ABO provide cartridge',type:'Breakdown / Repair'},
+    {jobId:2338,customer:'Yoki Yan',date:'2025-12-12',time:'15:00',warrantyIn:'x',quoteNum:'2399',paymentStatus:'FOC - installation',fault:'Neptune Installation',type:'Installation'},
+    {jobId:2342,customer:'Ms. Wong',date:'2025-12-15',time:'13:00',warrantyOut:'x',quoteNum:'2403',paymentStatus:'paid $58',fault:'Espring: Install cartridge error light blinking',type:'Breakdown / Repair'},
+    {jobId:2344,customer:'Giam Siew Hwa',date:'2025-12-15',time:'15:00',warrantyOut:'x',quoteNum:'2406',paymentStatus:'paid $58',fault:'Red light blinking and beeping sound',remarks:'used OEM filter (revisit)',type:'Breakdown / Repair'},
+    {jobId:2348,customer:'TESSA PHANG SHYN LI',date:'2025-12-16',time:'10:00',warrantyIn:'x',quoteNum:'2411',paymentStatus:'FOC - installation',fault:'Neptune Installation',type:'Installation'},
+    {jobId:2345,customer:'Sally Sim',date:'2025-12-18',time:'14:30',warrantyOut:'x',quoteNum:'2408',paymentStatus:'paid $58',fault:'Espring cannot install the cartridge fully',type:'Breakdown / Repair'},
+    {jobId:2347,customer:'SEAH BOON KENG',date:'2025-12-18',time:'11:00',warrantyOut:'x',quoteNum:'2410',paymentStatus:'paid $58',fault:'eSpring Display Faulty',type:'Breakdown / Repair'},
+    {jobId:2357,customer:'Rafiq Ahmad',date:'2025-12-22',time:'11:00',warrantyIn:'x',paymentStatus:'FOC - installation',fault:'FOC Neptune Installation',type:'Installation'},
+    {jobId:2352,customer:'Mr. Suria (Ivy)',date:'2025-12-22',time:'13:30',warrantyOut:'x',quoteNum:'2413',paymentStatus:'paid $58',fault:'uninstall the eSpring unit',type:'Breakdown / Repair'},
+    {jobId:2353,customer:'Mr. Suria (Ivy)',date:'2025-12-22',time:'14:30',warrantyOut:'x',quoteNum:'2414',paymentStatus:'paid $58',fault:'install eSpring unit',type:'Installation'},
+    {jobId:2359,customer:'Ng Chie Hong (Sally)',date:'2025-12-23',time:'11:00',warrantyIn:'x',paymentStatus:'FOC - installation',fault:'FOC Neptune Installation',type:'Installation'},
+    {jobId:2362,customer:'Miss Karen',date:'2025-12-23',time:'13:00',warrantyOut:'x',quoteNum:'2421',paymentStatus:'paid $58',fault:'beeping and phone and cup in red color',type:'Breakdown / Repair'},
+    {jobId:2356,customer:'Shi Yun',date:'2025-12-24',time:'10:00',warrantyIn:'x',quoteNum:'2419',paymentStatus:'paid $85',fault:'eSpring Neptune Installation (chargeable)',type:'Installation'},
+    {jobId:2354,customer:'Ms. P. Vijaya',date:'2025-12-27',time:'12:00',warrantyIn:'x',quoteNum:'2417',paymentStatus:'FOC - installation',fault:'Neptune Installation',type:'Installation'},
+    {jobId:2374,customer:'LOW LAI YOKE SUSAN',date:'2025-12-29',time:'10:00',warrantyOut:'x',quoteNum:'2435',paymentStatus:'paid $58',fault:'Espring: Blinking red light',type:'Breakdown / Repair'},
+    {jobId:2375,customer:'Germanda (Patricia Ong)',date:'2025-12-29',time:'14:00',warrantyIn:'x',quoteNum:'2436',paymentStatus:'paid $38',fault:'UV-C led light blinking red',type:'Breakdown / Repair'},
+    {jobId:2378,customer:'PANG KHEE WAN',date:'2025-12-30',time:'14:00',warrantyIn:'x',paymentStatus:'FOC - installation',fault:'FOC Neptune Installation',type:'Installation'},
+    {jobId:2383,customer:'BENNY LIU',date:'2025-12-30',time:'16:00',warrantyIn:'x',paymentStatus:'FOC - installation',fault:'FOC Neptune Installation',type:'Installation'},
+    // Walk-in tab
+    {jobId:2551,customer:'Vanessa Foo',date:'2025-03-26',collectedOn:'Collecting in May',quoteNum:'2615',paymentStatus:'Paid $38',quoteNumParts:'2626',paymentStatusParts:'Paid $62',fault:'Atmosphere ATS - unable to power',repair:'propose to change power board WTI9052',type:'Breakdown / Repair'},
+    {jobId:2556,customer:'Surakutty Manjumole',date:'2025-03-30',collectedOn:'Collected',quoteNum:'2623',paymentStatus:'Paid $38',quoteNumParts:'2627',paymentStatusParts:'Paid $51',fault:'Leaks from the rim of the cartridge',type:'Breakdown / Repair'},
+    {jobId:2577,customer:'Mr Chew',date:'2025-03-31',collectedOn:'Collected',paymentStatusParts:'FOC',fault:'eSpring Neptune - No power',repair:'change EM and UV',type:'Breakdown / Repair'},
+    {jobId:2565,customer:'Ong Khiang Cheng (Casey)',date:'2025-04-01',collectedOn:'Collected',quoteNum:'2632',paymentStatus:'Paid $38',fault:'Red light / beeping after changing of filter',type:'Breakdown / Repair'},
+    {jobId:2579,customer:'Guo Ying',date:'2025-04-06',collectedOn:'Collected on the spot',paymentStatusParts:'FOC',type:'Breakdown / Repair'},
+    {jobId:2583,customer:'Belle Lee',date:'2025-04-09',collectedOn:'Collected 13/4',quoteNum:'2653',paymentStatus:'Paid $89 (parts $51)',type:'Breakdown / Repair'},
+    {jobId:2589,customer:'Ow Shin Ling',date:'2025-04-07',collectedOn:'Collected 17/4',quoteNum:'2660',paymentStatus:'Paid $38',quoteNumParts:'2661',paymentStatusParts:'Paid $166',fault:'Mini Sky, unable to power on',repair:'change EM',type:'Breakdown / Repair'},
+    {jobId:2602,customer:'Halim (daughter Hanisah)',date:'2025-04-13',paymentStatus:'Waived by Murugan',quoteNumParts:'2701',type:'Breakdown / Repair'},
+    {jobId:2604,customer:'See Pei Ling',date:'2025-04-18',collectedOn:'collected 18/4',paymentStatus:'Waived by Murugan',quoteNumParts:'2702',fault:'odour filter',type:'Breakdown / Repair'},
+    {jobId:2605,customer:'Lee Li Ying',date:'2025-04-20',paymentStatus:'FOC-warranty',quoteNumParts:'2681',paymentStatusParts:'FOC-warranty',fault:'no light at level 1, night',repair:'replace EM - FOC',type:'Breakdown / Repair'},
+    {jobId:2606,customer:'Chong Xin Ru',date:'2025-04-21',collectedOn:'Collected 21/4',quoteNum:'2673',paymentStatus:'Paid $38 / $276',fault:'EM no signal',repair:'change EM',type:'Breakdown / Repair'},
+    {jobId:2608,customer:'Mdm Tan Im Neo',date:'2025-04-21',collectedOn:'Collected 25/4',quoteNum:'2675',paymentStatus:'Paid $38',quoteNumParts:'2676',paymentStatusParts:'Paid $137',fault:'No power',repair:'change EM $75',type:'Breakdown / Repair'},
+    {jobId:2609,customer:'Mdm Tan Im Neo',date:'2025-04-21',collectedOn:'Collected 25/4',quoteNum:'2677',paymentStatus:'Paid $38',quoteNumParts:'2678',paymentStatusParts:'Paid $74',fault:'motor noisy',repair:'change motor',type:'Breakdown / Repair'},
+    {jobId:2610,customer:'Mdm Tan Im Neo',date:'2025-04-21',collectedOn:'Collected 25/4',quoteNum:'2679',paymentStatus:'Paid $38',fault:'general cleaning',type:'Routine Maintenance'},
+    {jobId:2618,customer:'Wong Foong Sin',date:'2025-04-27',paymentStatus:'FOC',quoteNumParts:'2686',paymentStatusParts:'Paid to JW $57',fault:'red light',repair:'filter was not tighten after changed',remarks:'bough an adapter',type:'Breakdown / Repair'},
+    {jobId:2630,customer:'Serene Hah',date:'2025-04-28',collectedOn:'Collected on the spot',quoteNum:'2696',paymentStatus:'Paid to JW $38 / $27',fault:'no power',repair:'change EM $276',type:'Breakdown / Repair'},
+    {jobId:2633,customer:'Mr Lee (Vincent)',date:'2025-04-30',collectedOn:'Collected on the spot',quoteNum:'2706',paymentStatus:'Paid to JW $38',fault:'blinking red and beeping sound',remarks:'reinstall cartridge',type:'Breakdown / Repair'}
+  ];
+  jobs.forEach(jd=>{
+    if(!jd.customer)return;
+    if(jd.jobId&&DB.jobs.find(x=>x.id===jd.jobId))return;
+    const cust=DB.custs.find(c=>c.name===jd.customer);
+    const rec={id:jd.jobId||DB.nextIds.j++,title:jd.fault||jd.type||'Service',customer:jd.customer,applianceId:null,appliance:'',type:jd.type||'Breakdown / Repair',priority:'Medium',date:jd.date||'',time:jd.time||'',warrantyIn:jd.warrantyIn||'',warrantyOut:jd.warrantyOut||'',quoteNum:jd.quoteNum||'',quoteNumParts:jd.quoteNumParts||'',paymentStatus:jd.paymentStatus||'',paymentStatusParts:jd.paymentStatusParts||'',desc:jd.fault||'',repair:jd.repair||'',remarks:jd.remarks||'',collectedOn:jd.collectedOn||'',techIds:[],status:'Completed',createdAt:new Date(jd.date||Date.now()).toISOString(),_modifiedAt:now};
+    if(cust){const apps=DB.appliances.filter(a=>a.custId===cust.id);if(apps.length===1){rec.applianceId=apps[0].id;rec.appliance=apps[0].model+' ('+apps[0].serial+')';}}
+    DB.jobs.push(rec);
+    if(jd.jobId&&jd.jobId>=DB.nextIds.j)DB.nextIds.j=jd.jobId+1;
+  });
+  markTouched('jobs');
+
+  // Update customer homePhone from sheets
+  const phoneMap={'Kang Thia Kuang (Steven)':'97771580','Shalet Lee Huay Shan':'83235465','Miko Law Xiu Yu':'90090606','Susan Khong (Liow Mooi Hah)':'93832716','Suelyn Poh (shop manager)':'83419819','Chan Teck Swee Stephen':'93853371','Thian Fang Yii':'83789606','See Swee Kiat':'91116910','Chiam Peak Yoke':'82000016','Yeo Heng Jong (Stella)':'96259879','Lee Pui Kee':'87777550','Cai Ruihong':'91195179','Juliana Kusumawati':'97907195','Lau Sin Ling':'94575511','Ho Eng Keat':'87179307','Lee Chui Hah':'81389248','Tan Mei Lee (Lily Mary)':'97863445','Ng Chong Yee':'91855153','Chua Hiang Huay (Desmond Tay)':'98508446','Raymond Quan Yew Meng':'96812062','Teong Kar Lee':'91430928','Wong Chuee Ching Sally':'98424638','Ong Swee Choo':'81812347','Mallare Lenny F':'98277551','Ngiam Sung Juat (Doris)':'88048547','Ong Poh Choo (Miss Susan)':'93250765','Yoki Yan':'96466338','Ms. Wong':'94607000','Giam Siew Hwa':'96281677','TESSA PHANG SHYN LI':'80276323','Sally Sim':'96333248','SEAH BOON KENG':'98394194','Rafiq Ahmad':'98501152','Mr. Suria (Ivy)':'91885636','Ng Chie Hong (Sally)':'97581348','Miss Karen':'80952979','Shi Yun':'96632519','Ms. P. Vijaya':'93827753','LOW LAI YOKE SUSAN':'98626963','Germanda (Patricia Ong)':'97436413','PANG KHEE WAN':'94508309','BENNY LIU':'93249555'};
+  Object.entries(phoneMap).forEach(([name,hp])=>{const c=DB.custs.find(x=>x.name===name);if(c&&!c.homePhone){c.homePhone=hp;c._modifiedAt=now;}});
+  markTouched('custs');
+
+  try{localStorage.setItem(DB_KEY,JSON.stringify(DB));}catch(e){}
+  localStorage.setItem('amwayCRM_gsheets_v2','1');
+  console.log('Google Sheets v2 imported: '+custs.length+' customers, '+apps.length+' appliances, '+jobs.length+' jobs');
+}
+
 // ===== AUTH =====
 function doLogin(){
   const u=document.getElementById('lUser').value.trim();
@@ -889,7 +1151,6 @@ function showPage(p){
   document.querySelectorAll('.mob-tab').forEach(t=>t.classList.toggle('active',t.dataset.mp===p));
   if(p==='dashboard')renderDash();
   else if(p==='jobs')renderJobs();
-  else if(p==='reports')renderReports();
   else if(p==='customers')renderCusts();
   else if(p==='appliances')renderAppliances();
   else if(p==='parts')renderParts();
@@ -925,8 +1186,6 @@ function updCounts(){
   const activeJobs=DB.jobs.filter(j=>j.status!=='Completed'&&j.status!=='Cancelled').length;
   document.getElementById('jobCt').textContent=activeJobs;
   document.getElementById('jobCt').style.display=activeJobs?'':'none';
-  document.getElementById('repCt').textContent=DB.reports.length;
-  document.getElementById('repCt').style.display=DB.reports.length?'':'none';
   const lowStock=DB.parts.filter(p=>p.stock<=p.minStock).length;
   const pc=document.getElementById('partCt');
   pc.textContent=lowStock;pc.style.display=lowStock?'':'none';
@@ -1002,7 +1261,7 @@ function renderDash(){
     <div class="sc"><div class="si" style="background:var(--acs);color:var(--ac)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div><div class="sv">${DB.custs.length}</div><div class="sl">Customers</div></div>
     <div class="sc"><div class="si" style="background:var(--pus);color:var(--pu)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/></svg></div><div class="sv">${DB.appliances.length}</div><div class="sl">Appliances</div></div>
     <div class="sc"><div class="si" style="background:var(--wns);color:var(--wn)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg></div><div class="sv">${activeJobs.length}</div><div class="sl">Active Jobs</div></div>
-    <div class="sc"><div class="si" style="background:var(--oks);color:var(--ok)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/></svg></div><div class="sv">${DB.reports.length}</div><div class="sl">Reports</div></div>
+    <div class="sc"><div class="si" style="background:var(--oks);color:var(--ok)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div><div class="sv">${DB.jobs.filter(j=>j.status==='Completed').length}</div><div class="sl">Completed</div></div>
     <div class="sc"><div class="si" style="background:var(--gds);color:var(--gd)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/></svg></div><div class="sv">${DB.parts.length}</div><div class="sl">Part Types</div></div>
     <div class="sc"><div class="si" style="background:var(--ers);color:var(--er)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg></div><div class="sv">${outStock.length+lowStock.length}</div><div class="sl">Stock Alerts</div></div>
   </div>
@@ -1031,7 +1290,7 @@ function renderCusts(){
   document.getElementById('customersContent').innerHTML=`<div class="tw"><div class="th"><h3>Customers (${cs.length})</h3>${canEdit()?'<button class="btn btn-p btn-sm" onclick="openCustModal()">+ Add Customer</button>':''}</div>
     ${cs.length?cs.map(c=>{const apps=DB.appliances.filter(a=>a.custId===c.id);return`<div class="rpt-card">
       <div class="rpt-card-top"><span style="font-weight:700">${E(c.name)}</span><span class="bd bd-gd">${E(c.ada||'No ADA#')}</span></div>
-      <div class="rpt-card-row"><span class="rc-label">Phone</span><span class="rc-val"><a href="https://wa.me/${(c.phone||'').replace(/[^0-9]/g,'')}" target="_blank" style="color:var(--wa);text-decoration:none">${E(c.phone)}</a></span></div>
+      <div class="rpt-card-row"><span class="rc-label">Phone</span><span class="rc-val"><a href="https://wa.me/${(c.phone||'').replace(/[^0-9]/g,'')}" target="_blank" style="color:var(--wa);text-decoration:none">${E(c.phone)}</a>${c.homePhone?' / '+E(c.homePhone):''}</span></div>
       <div class="rpt-card-row"><span class="rc-label">Email</span><span class="rc-val">${c.email?`<a href="mailto:${E(c.email)}" style="color:var(--ac);text-decoration:none">${E(c.email)}</a>`:'—'}</span></div>
       <div class="rpt-card-row"><span class="rc-label">Address</span><span class="rc-val">${E(c.address)}</span></div>
       <div class="rpt-card-row"><span class="rc-label">Appliances</span><span class="rc-val">${apps.length} unit(s)</span></div>
@@ -1054,11 +1313,12 @@ function openCustModal(data){
     <div class="fg"><label>Amway ADA / IBO #</label><input class="fc" id="cAda" value="${E(d.ada||'')}" placeholder="AMW-..."></div></div>
     <div class="fg"><label>Address</label><input class="fc" id="cAdd" value="${E(d.address||'')}"></div>
     <div class="fr"><div class="fg"><label>Phone (WhatsApp)</label><input class="fc" id="cPh" value="${E(d.phone||'')}" placeholder="+65..."></div>
-    <div class="fg"><label>Email</label><input class="fc" type="email" id="cEm" value="${E(d.email||'')}"></div></div>
+    <div class="fg"><label>HP / Home No.</label><input class="fc" id="cHp" value="${E(d.homePhone||'')}" placeholder="Home phone"></div></div>
+    <div class="fg"><label>Email</label><input class="fc" type="email" id="cEm" value="${E(d.email||'')}"></div>
     <div class="fg"><label>Joined Date</label><input class="fc" type="date" id="cJn" value="${E(d.joined||todayISO())}"></div>
     <p style="font-size:11px;color:var(--t3);text-align:center;margin-top:8px">💾 Auto-saved as you type</p>`,
     `<button class="btn btn-s" onclick="closeCustModal(false)">Cancel</button><button class="btn btn-p" onclick="saveCust()">Save</button>`);
-  startFormDraft(draftKey,['eCId','cNm','cAda','cAdd','cPh','cEm','cJn']);
+  startFormDraft(draftKey,['eCId','cNm','cAda','cAdd','cPh','cHp','cEm','cJn']);
   if(!isEditing){
     setTimeout(async()=>{
       const restore=await offerDraftRestore(draftKey,'customer');
@@ -1073,7 +1333,7 @@ function closeCustModal(savedOK){
 function editCust(id){const c=DB.custs.find(x=>x.id===id);if(c)openCustModal(c);}
 function saveCust(){
   const eid=document.getElementById('eCId').value;
-  const d={name:document.getElementById('cNm').value.trim(),ada:document.getElementById('cAda').value.trim(),address:document.getElementById('cAdd').value.trim(),phone:document.getElementById('cPh').value.trim(),email:document.getElementById('cEm').value.trim(),joined:document.getElementById('cJn').value,_modifiedAt:Date.now()};
+  const d={name:document.getElementById('cNm').value.trim(),ada:document.getElementById('cAda').value.trim(),address:document.getElementById('cAdd').value.trim(),phone:document.getElementById('cPh').value.trim(),homePhone:document.getElementById('cHp').value.trim(),email:document.getElementById('cEm').value.trim(),joined:document.getElementById('cJn').value,_modifiedAt:Date.now()};
   if(!d.name){toast('Name is required','error');return;}
   if(eid){const i=DB.custs.findIndex(c=>c.id===parseInt(eid));if(i>=0)DB.custs[i]={...DB.custs[i],...d};}
   else{d.id=DB.nextIds.c++;DB.custs.push(d);}
@@ -1095,6 +1355,7 @@ function viewCustDetail(id){
   let html=`<h3 style="margin-bottom:12px">${E(c.name)}</h3>
   <div class="rpt-card-row"><span class="rc-label">ADA #</span><span class="rc-val">${E(c.ada||'—')}</span></div>
   <div class="rpt-card-row"><span class="rc-label">Phone</span><span class="rc-val">${E(c.phone)}</span></div>
+  ${c.homePhone?`<div class="rpt-card-row"><span class="rc-label">HP / Home</span><span class="rc-val">${E(c.homePhone)}</span></div>`:''}
   <div class="rpt-card-row"><span class="rc-label">Email</span><span class="rc-val">${E(c.email||'—')}</span></div>
   <div class="rpt-card-row"><span class="rc-label">Address</span><span class="rc-val">${E(c.address)}</span></div>
   <div class="rpt-card-row"><span class="rc-label">Joined</span><span class="rc-val">${E(c.joined||'—')}</span></div>
@@ -1339,7 +1600,7 @@ function renderJobs(filter){
   if(fv==='active')list=list.filter(j=>j.status!=='Completed'&&j.status!=='Cancelled');
   else if(fv==='completed')list=list.filter(j=>j.status==='Completed');
   document.getElementById('jobsContent').innerHTML=`
-    <div class="oc"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px"><h3 style="margin:0">Jobs (${list.length})</h3>${canEdit()?'<button class="btn btn-p btn-sm" onclick="openJobModal()">+ New Job</button>':''}</div>
+    <div class="oc"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px"><h3 style="margin:0">Jobs (${list.length})</h3><div style="display:flex;gap:8px;flex-wrap:wrap">${canEdit()?'<button class="btn btn-p btn-sm" onclick="openJobModal()">+ New Job</button>':''}${canEdit()?'<button class="btn btn-sm" style="background:#0066a1;color:#fff" onclick="importAmwayPDF()">📄 Import Amway PDF</button>':''}</div></div>
       <div class="flex-row" style="margin-top:12px">
         <button class="fc-chip ${fv==='all'?'active':''}" onclick="renderJobs('all')">All</button>
         <button class="fc-chip ${fv==='active'?'active':''}" onclick="renderJobs('active')">Active</button>
@@ -1353,11 +1614,22 @@ function renderJobs(filter){
         ${j.appliance?`<div class="rpt-card-row"><span class="rc-label">Appliance</span><span class="rc-val">${E(j.appliance)}</span></div>`:''}
         <div class="rpt-card-row"><span class="rc-label">Type</span><span class="rc-val">${E(j.type)}</span></div>
         <div class="rpt-card-row"><span class="rc-label">Schedule</span><span class="rc-val">${E(j.date||'TBD')} ${E(j.time||'')}</span></div>
+        ${j.warrantyIn||j.warrantyOut?`<div class="rpt-card-row"><span class="rc-label">Warranty</span><span class="rc-val">${j.warrantyIn?'<span class="bd bd-gd">In ✓</span>':''}${j.warrantyOut?'<span class="bd bd-wr">Out ✓</span>':''}</span></div>`:''}
+        ${j.quoteNum?`<div class="rpt-card-row"><span class="rc-label">Quote #</span><span class="rc-val">${E(j.quoteNum)}${j.quoteNumParts?' / Parts: '+E(j.quoteNumParts):''}</span></div>`:''}
+        ${j.paymentStatus?`<div class="rpt-card-row"><span class="rc-label">Payment (Amway)</span><span class="rc-val">${E(j.paymentStatus)}</span></div>`:''}
+        ${j.paymentStatusParts?`<div class="rpt-card-row"><span class="rc-label">Payment (Parts)</span><span class="rc-val">${E(j.paymentStatusParts)}</span></div>`:''}
         <div class="rpt-card-row"><span class="rc-label">Technician</span><span class="rc-val">${E(getJobTechNames(j))}</span></div>
         <div class="rpt-card-row"><span class="rc-label">Status</span><span class="rc-val">${jsBd(j.status)}</span></div>
-        ${j.desc?`<div class="rpt-card-row"><span class="rc-label">Notes</span><span class="rc-val">${E(j.desc.substring(0,80))}</span></div>`:''}
+        ${j.desc?`<div class="rpt-card-row"><span class="rc-label">Fault</span><span class="rc-val">${E(j.desc.substring(0,80))}</span></div>`:''}
+        ${j.repair?`<div class="rpt-card-row"><span class="rc-label">Repair</span><span class="rc-val">${E(j.repair.substring(0,80))}</span></div>`:''}
+        ${j.remarks?`<div class="rpt-card-row"><span class="rc-label">Remarks</span><span class="rc-val">${E(j.remarks.substring(0,60))}</span></div>`:''}
+        ${j.collectedOn?`<div class="rpt-card-row"><span class="rc-label">Collected</span><span class="rc-val">${E(j.collectedOn)}</span></div>`:''}
+        <div style="display:flex;gap:6px;margin:8px 0;flex-wrap:wrap">
+          ${j.pdfAttachment?`<button class="btn btn-sm" style="background:#1a73e8;color:#fff" onclick="viewJobPDF(${j.id})">📎 View Amway PDF</button><button class="btn btn-sm btn-d" onclick="removeJobPDF(${j.id})" title="Remove PDF">✕</button>`:`<button class="btn btn-sm" style="background:#1a73e8;color:#fff" onclick="attachJobPDF(${j.id})">📎 Attach Amway PDF</button>`}
+          ${j.status!=='Completed'?`<button class="btn btn-sm" style="background:#0066a1;color:#fff" onclick="openCollectionForm(${j.id})">✍️ Collection Form</button>`:''}
+          ${j.signedPDF?`<button class="btn btn-sm" style="background:#188038;color:#fff" onclick="viewSignedPDF(${j.id})">📄 Signed PDF</button>`:''}
+        </div>
         <div class="rpt-card-actions">
-          ${j.status!=='Completed'?`<button class="btn btn-sm btn-ok" onclick="createReportFromJob(${j.id})">📝 Create Report</button>`:''}
           ${canEdit()?`<button class="btn btn-sm btn-s" onclick="editJob(${j.id})">Edit</button>`:''}
           ${canEdit()&&j.status!=='Completed'?`<button class="btn btn-sm btn-s" onclick="updateJobStatus(${j.id})">Update Status</button>`:''}
           ${canDelete()?`<button class="btn btn-sm btn-d" onclick="delJob(${j.id})">Remove</button>`:''}
@@ -1381,14 +1653,23 @@ function openJobModal(data){
     <div class="fg"><label>Priority</label><select class="fc" id="jPr"><option>Low</option><option selected>Medium</option><option>High</option><option>Urgent</option></select></div></div>
     <div class="fr"><div class="fg"><label>Date</label><input class="fc" type="date" id="jDt" value="${E(d.date||todayISO())}"></div>
     <div class="fg"><label>Time</label><input class="fc" type="time" id="jTm" value="${E(d.time||'09:00')}"></div></div>
+    <div class="fr"><div class="fg"><label>Warranty In</label><select class="fc" id="jWi"><option value="">—</option><option value="x"${d.warrantyIn==='x'?' selected':''}>✓ In warranty</option></select></div>
+    <div class="fg"><label>Warranty Out</label><select class="fc" id="jWo"><option value="">—</option><option value="x"${d.warrantyOut==='x'?' selected':''}>✓ Out of warranty</option></select></div></div>
+    <div class="fr"><div class="fg"><label>Quote # (Amway)</label><input class="fc" id="jQn" value="${E(d.quoteNum||'')}" placeholder="e.g. 2311"></div>
+    <div class="fg"><label>Quote # (Parts)</label><input class="fc" id="jQp" value="${E(d.quoteNumParts||'')}" placeholder="Parts quote #"></div></div>
+    <div class="fr"><div class="fg"><label>Payment Status (Amway)</label><select class="fc" id="jPs"><option value="">—</option><option${d.paymentStatus==='Paid'?' selected':''}>Paid</option><option${d.paymentStatus==='Pending'?' selected':''}>Pending</option><option${(d.paymentStatus||'').startsWith('Paid $')?' selected':''}>Paid $</option><option${d.paymentStatus==='FOC'?' selected':''}>FOC</option><option${d.paymentStatus==='FOC - installation'?' selected':''}>FOC - installation</option><option${d.paymentStatus==='FOC by Amway'?' selected':''}>FOC by Amway</option><option${d.paymentStatus==='FOC-warranty'?' selected':''}>FOC-warranty</option><option${(d.paymentStatus||'').startsWith('Collected')?' selected':''}>Collected cash</option></select><input class="fc" id="jPsD" value="${E(d.paymentStatus||'')}" placeholder="Or type custom" style="margin-top:4px"></div>
+    <div class="fg"><label>Payment Status (Parts)</label><input class="fc" id="jPp" value="${E(d.paymentStatusParts||'')}" placeholder="e.g. Paid $62"></div></div>
     <div class="fg"><label>Assign Technician(s)</label><div data-draft-group="jTeChk" style="display:grid;gap:8px">${techOpts||'<em class=muted>No technicians yet</em>'}</div></div>
-    <div class="fg"><label>Description / Issue Reported</label><textarea class="fc" id="jDs" placeholder="What did the customer report?">${E(d.desc||'')}</textarea></div>
+    <div class="fg"><label>Fault / Issue Reported</label><textarea class="fc" id="jDs" placeholder="What did the customer report?">${E(d.desc||'')}</textarea></div>
+    <div class="fg"><label>Repair / Action Taken</label><textarea class="fc" id="jRp" placeholder="What was done to fix it?">${E(d.repair||'')}</textarea></div>
+    <div class="fg"><label>Remarks</label><textarea class="fc" id="jRm" placeholder="Additional notes">${E(d.remarks||'')}</textarea></div>
+    <div class="fg"><label>Collected On</label><input class="fc" id="jCo" value="${E(d.collectedOn||'')}" placeholder="e.g. Collected 13/4, Collecting in May"></div>
     <p style="font-size:11px;color:var(--t3);text-align:center;margin-top:8px">💾 Auto-saved as you type</p>`,
     `<button class="btn btn-s" onclick="closeJobModal(false)">Cancel</button><button class="btn btn-p" onclick="saveJob()">Save</button>`);
   if(d.type){const sel=document.getElementById('jTy');[...sel.options].forEach(o=>{if(o.value===d.type)o.selected=true;});}
   if(d.priority){document.getElementById('jPr').value=d.priority;}
   if(d.customer){onJobCustChange();setTimeout(()=>{if(d.applianceId)document.getElementById('jApp').value=d.applianceId;},50);}
-  startFormDraft(draftKey,['eJId','jTi','jCu','jApp','jTy','jPr','jDt','jTm','jDs']);
+  startFormDraft(draftKey,['eJId','jTi','jCu','jApp','jTy','jPr','jDt','jTm','jWi','jWo','jQn','jQp','jPs','jPsD','jPp','jDs','jRp','jRm','jCo']);
   if(!isEditing){
     setTimeout(async()=>{
       const restore=await offerDraftRestore(draftKey,'job');
@@ -1418,7 +1699,9 @@ function saveJob(){
   const customer=document.getElementById('jCu').value;
   const applianceId=parseInt(document.getElementById('jApp').value)||null;
   const app=applianceId?getApplianceById(applianceId):null;
-  const d={title:document.getElementById('jTi').value.trim(),customer,applianceId,appliance:app?`${app.model} (${app.serial})`:'',type:document.getElementById('jTy').value,priority:document.getElementById('jPr').value,date:document.getElementById('jDt').value,time:document.getElementById('jTm').value,desc:document.getElementById('jDs').value.trim(),techIds,status:techIds.length?'Assigned':'Open',_modifiedAt:Date.now()};
+  const psCustom=document.getElementById('jPsD').value.trim();
+  const psSelect=document.getElementById('jPs').value;
+  const d={title:document.getElementById('jTi').value.trim(),customer,applianceId,appliance:app?`${app.model} (${app.serial})`:'',type:document.getElementById('jTy').value,priority:document.getElementById('jPr').value,date:document.getElementById('jDt').value,time:document.getElementById('jTm').value,warrantyIn:document.getElementById('jWi').value,warrantyOut:document.getElementById('jWo').value,quoteNum:document.getElementById('jQn').value.trim(),quoteNumParts:document.getElementById('jQp').value.trim(),paymentStatus:psCustom||psSelect,paymentStatusParts:document.getElementById('jPp').value.trim(),desc:document.getElementById('jDs').value.trim(),repair:document.getElementById('jRp').value.trim(),remarks:document.getElementById('jRm').value.trim(),collectedOn:document.getElementById('jCo').value.trim(),techIds,status:techIds.length?'Assigned':'Open',_modifiedAt:Date.now()};
   if(!d.title){toast('Job title required','error');return;}
   if(!d.customer){toast('Select a customer','error');return;}
   if(eid){const i=DB.jobs.findIndex(j=>j.id===parseInt(eid));if(i>=0)DB.jobs[i]={...DB.jobs[i],...d};}
@@ -1432,6 +1715,405 @@ function updateJobStatus(id){
   document.getElementById('jSt').value=j.status||'Open';
 }
 function saveJobStatus(id){const s=document.getElementById('jSt').value;const i=DB.jobs.findIndex(j=>j.id===id);if(i>=0){DB.jobs[i].status=s;saveDB();}closeModal();renderJobs();updCounts();toast('Status updated','success');}
+
+// ===== IMPORT AMWAY PDF → AUTO CREATE JOB =====
+function importAmwayPDF(){
+  const inp=document.createElement('input');inp.type='file';inp.accept='.pdf';inp.multiple=true;
+  inp.onchange=async()=>{
+    const files=[...inp.files];if(!files.length)return;
+    // Load pdf.js if not loaded
+    if(!window.pdfjsLib){
+      const s=document.createElement('script');
+      s.src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+      document.head.appendChild(s);
+      await new Promise(r=>{s.onload=r;s.onerror=()=>{toast('Failed to load PDF library','error');r();}});
+      if(window.pdfjsLib)pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
+    if(!window.pdfjsLib){toast('PDF library not available','error');return;}
+    let created=0,skipped=0;
+    for(const file of files){
+      try{
+        const buf=await file.arrayBuffer();
+        const pdf=await pdfjsLib.getDocument({data:buf}).promise;
+        let fullText='';
+        for(let i=1;i<=pdf.numPages;i++){
+          const page=await pdf.getPage(i);
+          const tc=await page.getTextContent();
+          fullText+=tc.items.map(it=>it.str).join(' ')+'\n';
+        }
+        // Parse Amway PDF fields
+        const parsed=parseAmwayPDF(fullText);
+        if(!parsed.jobId){skipped++;toast(`Skipped ${file.name}: no Job ID found`,'error');continue;}
+        // Check if job already exists
+        if(DB.jobs.find(j=>j.id===parsed.jobId)){skipped++;toast(`Job ${parsed.jobId} already exists`,'info');continue;}
+        // Store PDF as base64
+        const reader=new FileReader();
+        const pdfBase64=await new Promise(r=>{reader.onload=()=>r(reader.result);reader.readAsDataURL(file);});
+        // Auto-create or find customer
+        let custName=parsed.customerName||'';
+        if(custName&&!DB.custs.find(c=>c.name===custName)){
+          DB.custs.push({id:DB.nextIds.c++,name:custName,ada:parsed.aboId||'',address:parsed.address||'',phone:parsed.phone||'',homePhone:'',email:parsed.email||'',joined:todayISO(),_modifiedAt:Date.now()});
+          markTouched('custs');
+        }
+        // Auto-create appliance if serial provided
+        let applianceId=null,applianceLabel='';
+        if(parsed.serial&&custName){
+          const cust=DB.custs.find(c=>c.name===custName);
+          if(cust){
+            let app=DB.appliances.find(a=>a.serial===parsed.serial);
+            if(!app){
+              app={id:DB.nextIds.a++,custId:cust.id,model:parsed.description||'',serial:parsed.serial,installDate:todayISO(),warrantyMonths:12,location:'',_modifiedAt:Date.now()};
+              DB.appliances.push(app);markTouched('appliances');
+            }
+            applianceId=app.id;applianceLabel=app.model+' ('+app.serial+')';
+          }
+        }
+        // Create job
+        const now=Date.now();
+        const job={
+          id:parsed.jobId,
+          title:parsed.remarks||parsed.description||'Amway Job '+parsed.jobId,
+          customer:custName,
+          applianceId,appliance:applianceLabel,
+          type:guessJobType(parsed.remarks||parsed.description||''),
+          priority:'Medium',
+          date:parsed.date||todayISO(),
+          time:parsed.time||'',
+          warrantyIn:parsed.warrantyStatus==='In-warranty'?'x':'',
+          warrantyOut:parsed.warrantyStatus==='Out-of-warranty'?'x':'',
+          quoteNum:'',quoteNumParts:'',
+          paymentStatus:'',paymentStatusParts:'',
+          desc:parsed.remarks||parsed.description||'',
+          repair:'',remarks:parsed.remarks||'',
+          collectedOn:'',
+          techIds:[],status:'Open',
+          pdfAttachment:pdfBase64,pdfName:file.name,
+          salesOrder:parsed.salesOrder||'',sku:parsed.sku||'',
+          createdAt:new Date().toISOString(),_modifiedAt:now
+        };
+        DB.jobs.push(job);
+        if(parsed.jobId>=DB.nextIds.j)DB.nextIds.j=parsed.jobId+1;
+        created++;
+      }catch(err){skipped++;console.error('PDF import error:',err);toast(`Error reading ${file.name}`,'error');}
+    }
+    if(created){markTouched('jobs');saveDB();renderJobs();updCounts();flushPendingSync();}
+    toast(`Imported ${created} job(s)${skipped?' ('+skipped+' skipped)':''}`,'success');
+  };inp.click();
+}
+
+function parseAmwayPDF(text){
+  const r={};
+  // Job ID
+  const jm=text.match(/Job\s*ID\s*(\d+)/i);if(jm)r.jobId=parseInt(jm[1]);
+  // Date: 21/04/2026, Tuesday
+  const dm=text.match(/Date:\s*(\d{1,2}\/\d{1,2}\/\d{4})/i);
+  if(dm){const p=dm[1].split('/');r.date=`${p[2]}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`;}
+  // Time
+  const tm=text.match(/Time:\s*([^\n]+)/i);if(tm)r.time=tm[1].trim();
+  // Address
+  const am=text.match(/Address:\s*([^\n]+(?:\n[^\n]*)?)/i);
+  if(am){r.address=am[1].replace(/\n/g,' ').replace(/COLLECTION/i,'').trim();}
+  // ABO/APC ID
+  const abm=text.match(/(\d{7,13})\s+([A-Z][A-Z\s]+[A-Z])\s+/);
+  if(abm){r.aboId=abm[1];r.customerName=abm[2].trim();}
+  // Fallback name extraction
+  if(!r.customerName){
+    const nm=text.match(/ABO\/APC\s*ID\s*Name\s*Email\s*Phone\s*(\d+)\s+([A-Za-z\s]+?)\s+(\d{8})/);
+    if(nm){r.aboId=nm[1];r.customerName=nm[2].trim();r.phone=nm[3];}
+  }
+  // Phone
+  const pm=text.match(/(\d{8})\s*$/m);if(pm&&!r.phone)r.phone=pm[1];
+  // Serial Number
+  const sm=text.match(/(\d{9,15}[A-Z]{3,4})/);if(sm)r.serial=sm[1];
+  // SKU
+  const skm=text.match(/(\d{6})\s+\d{6}\s+ASG/);if(skm)r.sku=skm[1];
+  // Description (product)
+  const dscm=text.match(/ASG\s*-\s*([^-]+)/i);
+  if(dscm)r.description=dscm[1].trim();
+  else{const dscm2=text.match(/(\d{6})\s+(.*?)\s+\d{9,}/);if(dscm2)r.description=dscm2[2].trim();}
+  // Warranty Status
+  if(/In-warranty/i.test(text))r.warrantyStatus='In-warranty';
+  else if(/Out-of-warranty|Out of warranty/i.test(text))r.warrantyStatus='Out-of-warranty';
+  // Sales Order
+  const som=text.match(/(\d{11})/);if(som)r.salesOrder=som[1];
+  // Comment/Remarks — text after "Comment/Remarks" before "I acknowledge"
+  const cm=text.match(/Comment\/Remarks\s*([\s\S]*?)(?:I acknowledge|Signature|$)/i);
+  if(cm)r.remarks=cm[1].trim();
+  // Fallback: last line of text before tables as remarks
+  if(!r.remarks){
+    const lines=text.split('\n').map(l=>l.trim()).filter(Boolean);
+    const jIdx=lines.findIndex(l=>/Job\s*ID/i.test(l));
+    if(jIdx>=0&&jIdx+1<lines.length){
+      const nextLine=lines[jIdx+1];
+      if(!/Repair|SKU|Contact|ABO|Date|Time|Address/i.test(nextLine))r.remarks=nextLine;
+    }
+  }
+  return r;
+}
+
+function guessJobType(text){
+  const t=text.toLowerCase();
+  if(/install/i.test(t))return 'Installation';
+  if(/filter|cartridge/i.test(t))return 'Filter Replacement';
+  if(/maintenance|cleaning|service/i.test(t))return 'Routine Maintenance';
+  if(/inspect/i.test(t))return 'Inspection';
+  if(/warranty/i.test(t))return 'Warranty Claim';
+  return 'Breakdown / Repair';
+}
+
+// ===== JOB PDF ATTACHMENT & DIGITAL SIGNATURE =====
+function attachJobPDF(jobId){
+  const inp=document.createElement('input');inp.type='file';inp.accept='.pdf';
+  inp.onchange=()=>{
+    const f=inp.files[0];if(!f)return;
+    if(f.size>5*1024*1024){toast('PDF too large (max 5MB)','error');return;}
+    const reader=new FileReader();
+    reader.onload=()=>{
+      const i=DB.jobs.findIndex(j=>j.id===jobId);
+      if(i>=0){DB.jobs[i].pdfAttachment=reader.result;DB.jobs[i].pdfName=f.name;DB.jobs[i]._modifiedAt=Date.now();markTouched('jobs');saveDB();renderJobs();flushPendingSync();toast('PDF attached','success');}
+    };reader.readAsDataURL(f);
+  };inp.click();
+}
+function viewJobPDF(jobId){
+  const j=DB.jobs.find(x=>x.id===jobId);if(!j||!j.pdfAttachment)return;
+  const w=window.open('');w.document.write(`<html><head><title>${E(j.pdfName||'Job PDF')}</title></head><body style="margin:0"><iframe src="${j.pdfAttachment}" style="width:100%;height:100vh;border:none"></iframe></body></html>`);
+}
+function removeJobPDF(jobId){
+  if(!confirm('Remove attached PDF?'))return;
+  const i=DB.jobs.findIndex(j=>j.id===jobId);
+  if(i>=0){delete DB.jobs[i].pdfAttachment;delete DB.jobs[i].pdfName;DB.jobs[i]._modifiedAt=Date.now();markTouched('jobs');saveDB();renderJobs();flushPendingSync();toast('PDF removed','info');}
+}
+
+// ===== COLLECTION / COMPLETION FORM WITH SIGNATURE =====
+function openCollectionForm(jobId){
+  const j=DB.jobs.find(x=>x.id===jobId);if(!j)return;
+  const cust=DB.custs.find(c=>c.name===j.customer)||{};
+  const app=j.applianceId?getApplianceById(j.applianceId):null;
+  const appW=app?getApplianceWarrantyStatus(app):{};
+  const dateStr=j.date||todayISO();
+  const dayNames=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const dd=new Date(dateStr);
+  const dayName=isNaN(dd)?'':dayNames[dd.getDay()];
+  const fmtDate=isNaN(dd)?dateStr:`${String(dd.getDate()).padStart(2,'0')}/${String(dd.getMonth()+1).padStart(2,'0')}/${dd.getFullYear()}, ${dayName}`;
+
+  const overlay=document.createElement('div');
+  overlay.id='collectionOverlay';
+  overlay.style.cssText='position:fixed;inset:0;z-index:9999;background:white;overflow-y:auto;padding:0';
+  overlay.innerHTML=`
+  <div id="collFormPrint" style="max-width:800px;margin:0 auto;padding:32px 24px;font-family:'Segoe UI',Arial,sans-serif;color:#111">
+    <!-- Header -->
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+      <div>
+        <div style="text-align:right;font-size:13px;margin-bottom:4px">Date: <strong>${fmtDate}</strong></div>
+        <div style="text-align:right;font-size:13px;margin-bottom:4px">Time: <strong>${E(j.time||'')}</strong></div>
+        <div style="text-align:right;font-size:13px">Address: <strong>${E(cust.address||'')}</strong></div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:28px;font-weight:900;font-family:'Arial Black',Impact,sans-serif;letter-spacing:1px;color:#222">Amway</div>
+        <div style="font-size:18px;font-weight:900;letter-spacing:3px;color:#111;border:2px solid #111;padding:2px 10px;margin-top:4px">COLLECTION</div>
+      </div>
+    </div>
+    <hr style="border:1px solid #111;margin:12px 0">
+    <div style="font-size:15px;font-weight:700;margin-bottom:16px">Job ID ${j.id||''}</div>
+    <p style="font-size:13px;line-height:1.6;margin-bottom:20px">This form is to acknowledge receipt of product described on the enclosed job no below have received the in good condition.</p>
+
+    <!-- Repair Unit table -->
+    <div style="font-size:14px;font-weight:700;margin-bottom:8px;text-decoration:underline">Repair Unit:</div>
+    <table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:20px">
+      <tr style="background:#0066a1;color:#fff"><th style="border:1px solid #333;padding:6px">SKU</th><th style="border:1px solid #333;padding:6px">Description</th><th style="border:1px solid #333;padding:6px">Serial Number</th><th style="border:1px solid #333;padding:6px">Warranty Status</th><th style="border:1px solid #333;padding:6px">Sales Order</th></tr>
+      <tr><td style="border:1px solid #ccc;padding:6px;text-align:center"><input class="fc" id="cfSku" value="" style="width:80px;text-align:center;font-size:12px"></td><td style="border:1px solid #ccc;padding:6px"><input class="fc" id="cfDesc" value="${E(app?app.model+' - '+app.serial:'')}" style="width:100%;font-size:12px"></td><td style="border:1px solid #ccc;padding:6px;text-align:center"><input class="fc" id="cfSerial" value="${E(app?app.serial:'')}" style="width:100%;font-size:12px"></td><td style="border:1px solid #ccc;padding:6px;text-align:center"><select class="fc" id="cfWarranty" style="font-size:12px"><option${appW.status==='active'?' selected':''}>In-warranty</option><option>Out-of-warranty</option></select></td><td style="border:1px solid #ccc;padding:6px;text-align:center"><input class="fc" id="cfSalesOrder" value="${E(cust.ada||'')}" style="width:100%;font-size:12px"></td></tr>
+    </table>
+
+    <!-- Contacts table -->
+    <div style="font-size:14px;font-weight:700;margin-bottom:8px;text-decoration:underline">Contacts:</div>
+    <table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:20px">
+      <tr style="background:#0066a1;color:#fff"><th style="border:1px solid #333;padding:6px">ABO/APC ID</th><th style="border:1px solid #333;padding:6px">Name</th><th style="border:1px solid #333;padding:6px">Email</th><th style="border:1px solid #333;padding:6px">Phone</th></tr>
+      <tr><td style="border:1px solid #ccc;padding:6px;text-align:center">${E(cust.ada||'')}</td><td style="border:1px solid #ccc;padding:6px;text-align:center">${E(cust.name||'')}</td><td style="border:1px solid #ccc;padding:6px;text-align:center">${E(cust.email||'')}</td><td style="border:1px solid #ccc;padding:6px;text-align:center">${E(cust.phone||cust.homePhone||'')}</td></tr>
+    </table>
+
+    <!-- Comment/Remarks -->
+    <div style="border:1px solid #999;padding:12px;margin-bottom:24px;min-height:80px">
+      <div style="font-size:12px;color:#666;margin-bottom:4px">Comment/Remarks</div>
+      <textarea id="cfRemarks" style="width:100%;min-height:60px;border:none;font-size:14px;resize:vertical;outline:none">${E(j.remarks||j.desc||j.title||'')}</textarea>
+    </div>
+
+    <p style="font-size:13px;margin-bottom:24px">I acknowledge the product is received in good condition.</p>
+
+    <!-- Signature pad -->
+    <div style="text-align:right;margin-bottom:12px">
+      <div style="font-size:12px;color:#666;margin-bottom:4px">Customer Signature (draw below)</div>
+      <div style="border:1px solid #999;display:inline-block;background:#fafafa;border-radius:4px;position:relative">
+        <canvas id="sigCanvas" width="360" height="160" style="cursor:crosshair;touch-action:none"></canvas>
+        <button onclick="clearSignature()" style="position:absolute;top:4px;right:4px;font-size:10px;background:#eee;border:1px solid #ccc;border-radius:4px;padding:2px 8px;cursor:pointer">Clear</button>
+      </div>
+      <div style="border-top:1px solid #111;width:360px;margin-left:auto;margin-top:-1px;padding-top:4px">
+        <div style="font-size:12px">Signature of ABO/APC/ Customer</div>
+        <div style="font-size:11px;color:#666;margin-top:4px">Printed Date: ${fmtDate}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Action buttons -->
+  <div style="max-width:800px;margin:0 auto;padding:16px 24px 32px;display:flex;gap:12px;flex-wrap:wrap;justify-content:center;border-top:1px solid #eee">
+    <button class="btn btn-s" onclick="closeCollectionForm()">Cancel</button>
+    <button class="btn btn-p" onclick="generateSignedPDF(${jobId})" style="background:#0066a1">📄 Generate Signed PDF</button>
+    <button class="btn btn-ok" onclick="saveAndCompleteJob(${jobId})">✅ Save & Complete Job</button>
+  </div>`;
+  document.body.appendChild(overlay);
+  document.body.style.overflow='hidden';
+  initSignaturePad();
+}
+
+function closeCollectionForm(){
+  const o=document.getElementById('collectionOverlay');if(o)o.remove();
+  document.body.style.overflow='';
+}
+
+// Signature pad drawing
+let _sigCtx,_sigDrawing=false;
+function initSignaturePad(){
+  const c=document.getElementById('sigCanvas');if(!c)return;
+  _sigCtx=c.getContext('2d');_sigCtx.strokeStyle='#111';_sigCtx.lineWidth=2;_sigCtx.lineCap='round';_sigCtx.lineJoin='round';
+  const getPos=(e)=>{const r=c.getBoundingClientRect();const t=e.touches?e.touches[0]:e;return[t.clientX-r.left,t.clientY-r.top];};
+  c.addEventListener('mousedown',(e)=>{_sigDrawing=true;_sigCtx.beginPath();const[x,y]=getPos(e);_sigCtx.moveTo(x,y);});
+  c.addEventListener('mousemove',(e)=>{if(!_sigDrawing)return;const[x,y]=getPos(e);_sigCtx.lineTo(x,y);_sigCtx.stroke();});
+  c.addEventListener('mouseup',()=>{_sigDrawing=false;});
+  c.addEventListener('mouseleave',()=>{_sigDrawing=false;});
+  c.addEventListener('touchstart',(e)=>{e.preventDefault();_sigDrawing=true;_sigCtx.beginPath();const[x,y]=getPos(e);_sigCtx.moveTo(x,y);},{passive:false});
+  c.addEventListener('touchmove',(e)=>{e.preventDefault();if(!_sigDrawing)return;const[x,y]=getPos(e);_sigCtx.lineTo(x,y);_sigCtx.stroke();},{passive:false});
+  c.addEventListener('touchend',()=>{_sigDrawing=false;});
+}
+function clearSignature(){const c=document.getElementById('sigCanvas');if(c){_sigCtx.clearRect(0,0,c.width,c.height);}}
+function isSignatureEmpty(){const c=document.getElementById('sigCanvas');if(!c)return true;const d=_sigCtx.getImageData(0,0,c.width,c.height).data;for(let i=3;i<d.length;i+=4){if(d[i]>0)return false;}return true;}
+
+// Generate signed PDF using jsPDF
+async function generateSignedPDF(jobId){
+  if(isSignatureEmpty()){toast('Please sign before generating PDF','error');return;}
+  const j=DB.jobs.find(x=>x.id===jobId);if(!j)return;
+  const cust=DB.custs.find(c=>c.name===j.customer)||{};
+  const app=j.applianceId?getApplianceById(j.applianceId):null;
+  const appW=app?getApplianceWarrantyStatus(app):{};
+  const dateStr=j.date||todayISO();
+  const dd=new Date(dateStr);
+  const dayNames=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const dayName=isNaN(dd)?'':dayNames[dd.getDay()];
+  const fmtDate=isNaN(dd)?dateStr:`${String(dd.getDate()).padStart(2,'0')}/${String(dd.getMonth()+1).padStart(2,'0')}/${dd.getFullYear()}, ${dayName}`;
+
+  // Load jsPDF dynamically
+  if(!window.jspdf){
+    const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+    document.head.appendChild(s);
+    await new Promise(r=>{s.onload=r;s.onerror=()=>{toast('Failed to load PDF library','error');r();}});
+  }
+  if(!window.jspdf){toast('PDF library not available','error');return;}
+
+  const{jsPDF}=window.jspdf;
+  const doc=new jsPDF('p','mm','a4');
+  const W=210,margin=20;let y=20;
+  const remarks=document.getElementById('cfRemarks')?document.getElementById('cfRemarks').value:'';
+  const sku=document.getElementById('cfSku')?document.getElementById('cfSku').value:'';
+  const desc=document.getElementById('cfDesc')?document.getElementById('cfDesc').value:'';
+  const serial=document.getElementById('cfSerial')?document.getElementById('cfSerial').value:'';
+  const warranty=document.getElementById('cfWarranty')?document.getElementById('cfWarranty').value:'';
+  const salesOrder=document.getElementById('cfSalesOrder')?document.getElementById('cfSalesOrder').value:'';
+
+  // Header
+  doc.setFontSize(11);
+  doc.text(`Date: ${fmtDate}`,margin,y);y+=6;
+  doc.text(`Time: ${j.time||''}`,margin,y);y+=6;
+  doc.text(`Address: ${cust.address||''}`,margin,y);y+=6;
+
+  // "Amway" brand + COLLECTION
+  doc.setFontSize(22);doc.setFont('helvetica','bold');
+  doc.text('Amway',W-margin,20,{align:'right'});
+  doc.setFontSize(14);doc.setFont('helvetica','bold');
+  doc.rect(W-margin-42,24,42,10);
+  doc.text('COLLECTION',W-margin-40,31);
+  doc.setFont('helvetica','normal');
+
+  y+=4;doc.setLineWidth(0.5);doc.line(margin,y,W-margin,y);y+=8;
+
+  doc.setFontSize(13);doc.setFont('helvetica','bold');
+  doc.text(`Job ID ${j.id||''}`,margin,y);y+=10;
+  doc.setFont('helvetica','normal');doc.setFontSize(10);
+  doc.text('This form is to acknowledge receipt of product described on the enclosed job no below have',margin,y);y+=5;
+  doc.text('received the in good condition.',margin,y);y+=12;
+
+  // Repair Unit header
+  doc.setFont('helvetica','bold');doc.setFontSize(11);
+  doc.text('Repair Unit:',margin,y);y+=6;
+  doc.setFont('helvetica','normal');doc.setFontSize(9);
+
+  // Table header
+  const cols=[margin,margin+22,margin+72,margin+110,margin+140];
+  const colW=[22,50,38,30,W-margin-margin-140];
+  doc.setFillColor(0,102,161);doc.setTextColor(255);
+  doc.rect(margin,y,W-2*margin,7,'F');
+  doc.text('SKU',cols[0]+2,y+5);doc.text('Description',cols[1]+2,y+5);doc.text('Serial Number',cols[2]+2,y+5);doc.text('Warranty',cols[3]+2,y+5);doc.text('Sales Order',cols[4]+2,y+5);
+  y+=7;doc.setTextColor(0);
+  doc.rect(margin,y,W-2*margin,8);
+  doc.text(sku,cols[0]+2,y+5);doc.text(desc,cols[1]+2,y+5);doc.text(serial,cols[2]+2,y+5);doc.text(warranty,cols[3]+2,y+5);doc.text(salesOrder,cols[4]+2,y+5);
+  y+=14;
+
+  // Contacts header
+  doc.setFont('helvetica','bold');doc.setFontSize(11);
+  doc.text('Contacts:',margin,y);y+=6;
+  doc.setFont('helvetica','normal');doc.setFontSize(9);
+
+  const ccols=[margin,margin+35,margin+80,margin+120];
+  doc.setFillColor(0,102,161);doc.setTextColor(255);
+  doc.rect(margin,y,W-2*margin,7,'F');
+  doc.text('ABO/APC ID',ccols[0]+2,y+5);doc.text('Name',ccols[1]+2,y+5);doc.text('Email',ccols[2]+2,y+5);doc.text('Phone',ccols[3]+2,y+5);
+  y+=7;doc.setTextColor(0);
+  doc.rect(margin,y,W-2*margin,8);
+  doc.text(cust.ada||'',ccols[0]+2,y+5);doc.text(cust.name||'',ccols[1]+2,y+5);doc.text(cust.email||'',ccols[2]+2,y+5);doc.text(cust.phone||cust.homePhone||'',ccols[3]+2,y+5);
+  y+=14;
+
+  // Comment/Remarks
+  doc.setFontSize(10);
+  doc.rect(margin,y,W-2*margin,30);
+  doc.text('Comment/Remarks',margin+3,y+5);
+  const lines=doc.splitTextToSize(remarks,W-2*margin-6);
+  doc.text(lines,margin+3,y+11);
+  y+=36;
+
+  doc.text('I acknowledge the product is received in good condition.',margin,y);y+=16;
+
+  // Signature image
+  const sigCanvas=document.getElementById('sigCanvas');
+  if(sigCanvas){
+    const sigData=sigCanvas.toDataURL('image/png');
+    doc.addImage(sigData,'PNG',W-margin-70,y-10,65,30);
+  }
+  y+=22;
+  doc.line(W-margin-70,y,W-margin,y);y+=5;
+  doc.setFontSize(10);doc.text('Signature of ABO/APC/ Customer',W-margin-70,y);y+=6;
+  doc.setFontSize(9);doc.setTextColor(100);doc.text(`Printed Date: ${fmtDate}`,W-margin-70,y);
+
+  // Save
+  const fname=`Job_ID_${j.id}_${(cust.name||'').replace(/[^a-zA-Z0-9]/g,'_')}_signed.pdf`;
+  doc.save(fname);
+
+  // Also save the signed PDF base64 to the job record
+  const pdfBase64=doc.output('datauristring');
+  const i=DB.jobs.findIndex(x=>x.id===jobId);
+  if(i>=0){DB.jobs[i].signedPDF=pdfBase64;DB.jobs[i].signedAt=new Date().toISOString();DB.jobs[i]._modifiedAt=Date.now();markTouched('jobs');saveDB();flushPendingSync();}
+  toast('Signed PDF generated & saved','success');
+}
+
+function saveAndCompleteJob(jobId){
+  if(isSignatureEmpty()){toast('Please sign before completing','error');return;}
+  generateSignedPDF(jobId).then(()=>{
+    const i=DB.jobs.findIndex(j=>j.id===jobId);
+    if(i>=0){DB.jobs[i].status='Completed';DB.jobs[i]._modifiedAt=Date.now();markTouched('jobs');saveDB();flushPendingSync();}
+    closeCollectionForm();renderJobs();updCounts();toast('Job completed with signed form','success');
+  });
+}
+
+function viewSignedPDF(jobId){
+  const j=DB.jobs.find(x=>x.id===jobId);if(!j||!j.signedPDF)return;
+  const w=window.open('');w.document.write(`<html><head><title>Signed PDF - Job ${j.id}</title></head><body style="margin:0"><iframe src="${j.signedPDF}" style="width:100%;height:100vh;border:none"></iframe></body></html>`);
+}
 
 // ===== REPORTS (Breakdown record + parts replaced) =====
 function createReportFromJob(jobId){
@@ -1895,8 +2577,6 @@ function renderData(){
         <div class="sc"><div class="sv">${DB.custs.length}</div><div class="sl">Customers</div></div>
         <div class="sc"><div class="sv">${DB.appliances.length}</div><div class="sl">Appliances</div></div>
         <div class="sc"><div class="sv">${DB.parts.length}</div><div class="sl">Part Types</div></div>
-        <div class="sc"><div class="sv">${DB.reports.length}</div><div class="sl">Reports</div></div>
-        <div class="sc"><div class="sv">${DB.partChanges.length}</div><div class="sl">Part Changes</div></div>
         <div class="sc"><div class="sv">${DB.jobs.length}</div><div class="sl">Jobs</div></div>
       </div>
     </div>
@@ -2070,7 +2750,7 @@ function importCSV(file){
             const name=ptrim(row.name);
             if(!name){stats.skipped++;stats.reasons.push(`Row ${idx+2}: missing name`);return;}
             const id=pid(row.id);
-            const rec={name,ada:ptrim(row.ada),address:ptrim(row.address),phone:ptrim(row.phone),email:ptrim(row.email),joined:ptrim(row.joined)||todayISO(),_modifiedAt:now};
+            const rec={name,ada:ptrim(row.ada),address:ptrim(row.address),phone:ptrim(row.phone),homePhone:ptrim(row.homePhone||row.homephone||row.hp),email:ptrim(row.email),joined:ptrim(row.joined)||todayISO(),_modifiedAt:now};
             if(id){
               const existing=DB.custs.findIndex(c=>c.id===id);
               if(existing>=0){DB.custs[existing]={...DB.custs[existing],...rec,id};stats.updated++;}
@@ -2127,7 +2807,7 @@ function importCSV(file){
             // Tech names → ids (best effort)
             const techNames=ptrim(row.techNames).split(',').map(s=>s.trim()).filter(Boolean);
             const techIds=techNames.map(n=>{const t=DB.techs.find(x=>x.name===n);return t?t.id:null;}).filter(x=>x!=null);
-            const rec={title,customer,applianceId,appliance,type:ptrim(row.type)||'Routine Maintenance',priority:ptrim(row.priority)||'Medium',date:ptrim(row.date)||todayISO(),time:ptrim(row.time)||'09:00',status:ptrim(row.status)||(techIds.length?'Assigned':'Open'),desc:ptrim(row.desc),techIds,_modifiedAt:now};
+            const rec={title,customer,applianceId,appliance,type:ptrim(row.type)||'Routine Maintenance',priority:ptrim(row.priority)||'Medium',date:ptrim(row.date)||todayISO(),time:ptrim(row.time)||'09:00',status:ptrim(row.status)||(techIds.length?'Assigned':'Open'),desc:ptrim(row.desc||row.fault),repair:ptrim(row.repair),remarks:ptrim(row.remarks),warrantyIn:ptrim(row.warrantyIn||row.warrantyin),warrantyOut:ptrim(row.warrantyOut||row.warrantyout),quoteNum:ptrim(row.quoteNum||row.quotenum),quoteNumParts:ptrim(row.quoteNumParts||row.quotenumparts),paymentStatus:ptrim(row.paymentStatus||row.paymentstatus),paymentStatusParts:ptrim(row.paymentStatusParts||row.paymentstatusparts),collectedOn:ptrim(row.collectedOn||row.collectedon),techIds,_modifiedAt:now};
             if(id){
               const existing=DB.jobs.findIndex(j=>j.id===id);
               if(existing>=0){DB.jobs[existing]={...DB.jobs[existing],...rec,id};stats.updated++;}
@@ -2266,61 +2946,5 @@ function init(){
 }
 init();
 </script>
-
-<!-- === Shared Calendar Patch v1.1 (auto-injected) === -->
-<script>
-// Canonical Shared Calendar helper (v1.1)
-// Backward-compatible wrapper for existing code
-(function(){
-  if (window.SharedCal) return;
-  const ROOT = 'sharedFieldServiceCal_v1';
-  const EVENTS = ROOT + '/events';
-  const INDEX = ROOT + '/appIndex';
-  const APP = window.APP_TAG || (location.href.includes('amway') ? 'amway' : 'octopack');
-
-  function checksum(evt){
-    const s = [evt.title, evt.startTs, evt.endTs, evt.technicianId, evt.status].join('|');
-    let h = 0; for (let i=0;i<s.length;i++){ h = ((h<<5)-h)+s.charCodeAt(i); h|=0; }
-    return 'cs_' + Math.abs(h);
-  }
-
-  window.SharedCal = {
-    normalize(raw){
-      const now = Date.now();
-      const evt = {
-        id: raw.id || ('evt_' + Math.random().toString(36).slice(2)),
-        sourceApp: raw.sourceApp || APP,
-        sourceId: raw.sourceId || raw.jobId || raw.workOrderId || raw.id,
-        title: raw.title || raw.subject || 'Service Job',
-        description: raw.description || raw.notes || '',
-        startTs: raw.startTs || raw.start || raw.startTime,
-        endTs: raw.endTs || raw.end || raw.endTime,
-        timezone: raw.timezone || 'Asia/Singapore',
-        technicianId: raw.technicianId || raw.tech || '',
-        location: raw.location || '',
-        status: raw.status || 'scheduled',
-        visibility: 'shared',
-        createdAt: raw.createdAt || now,
-        updatedAt: now,
-        deleted: !!raw.deleted
-      };
-      evt.checksum = checksum(evt);
-      return evt;
-    },
-    async upsert(db, raw){
-      const evt = this.normalize(raw);
-      const ref = db.ref(`${EVENTS}/${evt.id}`);
-      await ref.update(evt);
-      await db.ref(`${INDEX}/${evt.sourceApp}/${evt.id}`).set(true);
-      return evt;
-    },
-    async softDelete(db, evt){
-      await db.ref(`${EVENTS}/${evt.id}`).update({deleted:true, updatedAt: Date.now()});
-    }
-  };
-})();
-</script>
-<!-- === End Shared Calendar Patch === -->
-
 </body>
 </html>
