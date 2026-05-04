@@ -2109,7 +2109,25 @@ function importAmwayPDF(){
         const parsed=await parseWithClaude(base64);
         if(!parsed||!parsed.jobId){skipped++;toast('Skipped '+file.name+': could not parse','error');continue;}
         if(DB.jobs.find(j=>j.id===parsed.jobId)){skipped++;toast('Job '+parsed.jobId+' already exists','info');continue;}
+
+        // Normalize time to HH:MM format for time input
+        parsed.time=normalizeTime(parsed.time||'');
+
+        // Try to match customer name to existing customers (fuzzy)
         let custName=parsed.customerName||'';
+        const exactMatch=DB.custs.find(c=>c.name===custName);
+        if(!exactMatch&&custName){
+          // Try case-insensitive or partial match
+          const lower=custName.toLowerCase();
+          const fuzzy=DB.custs.find(c=>c.name.toLowerCase()===lower||c.name.toLowerCase().includes(lower)||lower.includes(c.name.toLowerCase()));
+          if(fuzzy)custName=fuzzy.name; // use existing name to ensure exact match
+        }
+
+        // Show confirmation with all parsed fields
+        const confirmed=await showParsedConfirmation(parsed,custName,file.name);
+        if(!confirmed){skipped++;continue;}
+        custName=confirmed.customerName||custName;
+
         if(custName&&!DB.custs.find(c=>c.name===custName)){
           DB.custs.push({id:DB.nextIds.c++,name:custName,ada:parsed.aboId||'',address:parsed.address||'',phone:parsed.phone||'',homePhone:'',email:parsed.email||'',joined:todayISO(),_modifiedAt:Date.now()});
           markTouched('custs');
@@ -2131,7 +2149,7 @@ function importAmwayPDF(){
             applianceId=app.id;applianceLabel=app.model+' ('+app.serial+')';
           }
         }
-        const job={id:parsed.jobId,title:parsed.remarks||parsed.productDescription||'Amway Job '+parsed.jobId,customer:custName,applianceId,appliance:applianceLabel,type:parsed.jobType||'Breakdown / Repair',priority:'Medium',date:parsed.date||todayISO(),time:parsed.time||'',warrantyIn:parsed.warrantyStatus==='In-warranty'?'x':'',warrantyOut:parsed.warrantyStatus==='Out-of-warranty'?'x':'',quoteNum:'',quoteNumParts:'',paymentStatus:'',paymentStatusParts:'',desc:parsed.remarks||parsed.productDescription||'',repair:'',remarks:parsed.remarks||'',collectedOn:'',techIds:[],status:'Open',pdfAttachment:base64,pdfName:file.name,salesOrder:parsed.salesOrder||'',sku:parsed.sku||'',createdAt:new Date().toISOString(),_modifiedAt:Date.now()};
+        const job={id:parsed.jobId,title:parsed.remarks||parsed.productDescription||'Amway Job '+parsed.jobId,customer:custName,applianceId,appliance:applianceLabel,type:parsed.jobType||'Breakdown / Repair',priority:'Medium',date:parsed.date||todayISO(),time:parsed.time||'',warrantyIn:parsed.warrantyStatus==='In-warranty'?'x':'',warrantyOut:parsed.warrantyStatus==='Out-of-warranty'||parsed.warrantyStatus==='Out-warranty'?'x':'',quoteNum:'',quoteNumParts:'',paymentStatus:'',paymentStatusParts:'',desc:parsed.remarks||parsed.productDescription||'',repair:'',remarks:parsed.remarks||'',collectedOn:'',techIds:[],status:'Open',pdfAttachment:base64,pdfName:file.name,salesOrder:parsed.salesOrder||'',sku:parsed.sku||'',createdAt:new Date().toISOString(),_modifiedAt:Date.now()};
         DB.jobs.push(job);if(parsed.jobId>=DB.nextIds.j)DB.nextIds.j=parsed.jobId+1;created++;
       }catch(err){skipped++;console.error('PDF import error:',err);toast('Error: '+file.name+' - '+err.message,'error');}
     }
@@ -2140,28 +2158,141 @@ function importAmwayPDF(){
   };inp.click();
 }
 function fileToBase64(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=()=>rej(new Error('Read failed'));r.readAsDataURL(file);});}
+
+function normalizeTime(t){
+  if(!t)return '';
+  // Already HH:MM
+  if(/^\d{2}:\d{2}$/.test(t))return t;
+  // "3pm" or "3:30pm" or "15:00" or "3pm - 4pm"
+  const m=t.match(/(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/i);
+  if(m){
+    let h=parseInt(m[1]);const min=m[2]||'00';const ampm=(m[3]||'').toLowerCase();
+    if(ampm==='pm'&&h<12)h+=12;
+    if(ampm==='am'&&h===12)h=0;
+    return String(h).padStart(2,'0')+':'+min;
+  }
+  return '';
+}
+
+function showParsedConfirmation(parsed,matchedCustName,fileName){
+  return new Promise(resolve=>{
+    // Build customer dropdown options
+    const custOpts=DB.custs.map(c=>`<option value="${E(c.name)}"${(matchedCustName||parsed.customerName)===c.name?' selected':''}>${E(c.name)}</option>`).join('');
+    const warrantyOpts=`<option value="">—</option><option value="In-warranty"${parsed.warrantyStatus==='In-warranty'?' selected':''}>In-warranty</option><option value="Out-of-warranty"${parsed.warrantyStatus==='Out-of-warranty'?' selected':''}>Out-of-warranty</option>`;
+
+    openModal('📄 Confirm PDF Import: '+fileName,
+      `<div style="font-size:13px;line-height:1.8">
+      <div class="fr"><div class="fg"><label>Job ID</label><input class="fc" id="cfmJobId" value="${parsed.jobId||''}" readonly style="background:#f0f0f0"></div>
+      <div class="fg"><label>Date</label><input class="fc" type="date" id="cfmDate" value="${E(parsed.date||'')}"></div></div>
+      <div class="fr"><div class="fg"><label>Time</label><input class="fc" type="time" id="cfmTime" value="${E(parsed.time||'')}"></div>
+      <div class="fg"><label>Job Type</label><select class="fc" id="cfmType"><option${parsed.jobType==='Breakdown / Repair'?' selected':''}>Breakdown / Repair</option><option${parsed.jobType==='Installation'?' selected':''}>Installation</option><option${parsed.jobType==='Filter Replacement'?' selected':''}>Filter Replacement</option><option${parsed.jobType==='Routine Maintenance'?' selected':''}>Routine Maintenance</option><option${parsed.jobType==='Warranty Claim'?' selected':''}>Warranty Claim</option></select></div></div>
+      <div class="fg"><label>Customer</label><select class="fc" id="cfmCust"><option value="">— New: ${E(parsed.customerName||'')} —</option>${custOpts}</select></div>
+      <div class="fg"><label>Address</label><input class="fc" id="cfmAddr" value="${E(parsed.address||'')}"></div>
+      <div class="fr"><div class="fg"><label>ABO/APC ID</label><input class="fc" id="cfmAbo" value="${E(parsed.aboId||'')}"></div>
+      <div class="fg"><label>Phone</label><input class="fc" id="cfmPhone" value="${E(parsed.phone||'')}"></div></div>
+      <hr style="margin:12px 0">
+      <div class="fr"><div class="fg"><label>SKU</label><input class="fc" id="cfmSku" value="${E(parsed.sku||'')}"></div>
+      <div class="fg"><label>Warranty Status</label><select class="fc" id="cfmWarranty">${warrantyOpts}</select></div></div>
+      <div class="fg"><label>Product Description</label><input class="fc" id="cfmProduct" value="${E(parsed.productDescription||'')}"></div>
+      <div class="fr"><div class="fg"><label>Serial Number</label><input class="fc" id="cfmSerial" value="${E(parsed.serialNumber||'')}"></div>
+      <div class="fg"><label>Sales Order</label><input class="fc" id="cfmSalesOrder" value="${E(parsed.salesOrder||'')}"></div></div>
+      <div class="fg"><label>Comment / Remarks</label><textarea class="fc" id="cfmRemarks">${E(parsed.remarks||'')}</textarea></div>
+      </div>`,
+      `<button class="btn btn-s" onclick="document.getElementById('_cfmResolve')?.click()">Cancel</button><button class="btn btn-p" onclick="document.getElementById('_cfmConfirm')?.click()">✅ Create Job</button>
+       <button id="_cfmConfirm" style="display:none"></button><button id="_cfmResolve" style="display:none"></button>`
+    );
+
+    document.getElementById('_cfmConfirm').onclick=()=>{
+      const result={
+        customerName:document.getElementById('cfmCust').value||parsed.customerName,
+        date:document.getElementById('cfmDate').value,
+        time:document.getElementById('cfmTime').value,
+        jobType:document.getElementById('cfmType').value,
+        address:document.getElementById('cfmAddr').value,
+        aboId:document.getElementById('cfmAbo').value,
+        phone:document.getElementById('cfmPhone').value,
+        sku:document.getElementById('cfmSku').value,
+        warrantyStatus:document.getElementById('cfmWarranty').value,
+        productDescription:document.getElementById('cfmProduct').value,
+        serialNumber:document.getElementById('cfmSerial').value,
+        salesOrder:document.getElementById('cfmSalesOrder').value,
+        remarks:document.getElementById('cfmRemarks').value
+      };
+      // Merge back into parsed
+      Object.assign(parsed,result);
+      closeModal();resolve(result);
+    };
+    document.getElementById('_cfmResolve').onclick=()=>{closeModal();resolve(null);};
+  });
+}
 async function parseWithClaude(pdfBase64){
   const b64Data=pdfBase64.split(',')[1];
-  // Try Claude API first
+
+  // Step 1: Convert PDF to image using pdf.js (tables are image-based, not text)
+  let imageBase64=null;
   try{
-    const resp=await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,
-        messages:[{role:'user',content:[
-          {type:'document',source:{type:'base64',media_type:'application/pdf',data:b64Data}},
-          {type:'text',text:'Extract ALL fields from this Amway job PDF. Return ONLY valid JSON, no markdown, no backticks. Schema: {"jobId":<number>,"date":"<YYYY-MM-DD>","time":"<as shown>","address":"<full address>","customerName":"<full name>","aboId":"<ABO/APC ID>","email":"","phone":"<phone>","sku":"<SKU>","productDescription":"<product desc>","serialNumber":"<serial>","warrantyStatus":"<In-warranty or Out-of-warranty>","salesOrder":"<sales order>","remarks":"<comment/remarks>","jobType":"<Installation|Breakdown / Repair|Filter Replacement|Routine Maintenance|Inspection|Warranty Claim>"}'}
-        ]}]})
-    });
-    if(resp.ok){
-      const data=await resp.json();
-      if(data.content){
-        const text=data.content.map(c=>c.text||'').join('');
-        const parsed=JSON.parse(text.replace(/```json|```/g,'').trim());
-        if(parsed.jobId)return parsed;
-      }
+    if(!window.pdfjsLib){
+      const s=document.createElement('script');
+      s.src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+      document.head.appendChild(s);
+      await new Promise(r=>{s.onload=r;s.onerror=()=>r();});
+      if(window.pdfjsLib)pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     }
-  }catch(e){console.warn('Claude API failed, using fallback parser:',e);}
-  // Fallback: use pdf.js to extract text then parse with regex
+    if(window.pdfjsLib){
+      const raw=atob(b64Data);
+      const arr=new Uint8Array(raw.length);
+      for(let i=0;i<raw.length;i++)arr[i]=raw.charCodeAt(i);
+      const pdf=await pdfjsLib.getDocument({data:arr}).promise;
+      const page=await pdf.getPage(1);
+      const scale=2; // high res for OCR
+      const vp=page.getViewport({scale});
+      const canvas=document.createElement('canvas');
+      canvas.width=vp.width;canvas.height=vp.height;
+      const ctx=canvas.getContext('2d');
+      await page.render({canvasContext:ctx,viewport:vp}).promise;
+      imageBase64=canvas.toDataURL('image/png').split(',')[1];
+      toast('PDF rendered to image, sending to AI...','info');
+    }
+  }catch(e){console.warn('PDF to image failed:',e);}
+
+  // Step 2: Send IMAGE to Gemini (not PDF) — Gemini vision reads table images perfectly
+  const GEMINI_KEY=localStorage.getItem('amwayCRM_gemini_key')||'';
+  if(!GEMINI_KEY){
+    const key=prompt('Enter Google Gemini API key for AI-powered PDF parsing\\n\\nGet FREE key at: https://aistudio.google.com/apikey\\n\\nPress Cancel for basic parser (may miss table data):');
+    if(key)localStorage.setItem('amwayCRM_gemini_key',key.trim());
+    else return await parsePDFWithFallback(pdfBase64);
+  }
+
+  const apiKey=localStorage.getItem('amwayCRM_gemini_key');
+  if(apiKey&&imageBase64){
+    try{
+      const resp=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+apiKey,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          contents:[{parts:[
+            {inline_data:{mime_type:'image/png',data:imageBase64}},
+            {text:'This is an Amway service job collection form. Read ALL text including the tables carefully. Extract every field. Return ONLY valid JSON with NO markdown formatting, NO backticks, NO explanation before or after. Schema:\n{"jobId":<number from "Job ID XXXX">,"date":"<YYYY-MM-DD from the date shown>","time":"<time exactly as shown>","address":"<complete address including unit number and postal code>","customerName":"<full name from Contacts table>","aboId":"<ABO/APC ID number from Contacts table>","email":"<email from Contacts table or empty string>","phone":"<phone from Contacts table>","sku":"<SKU number from Repair Unit table>","productDescription":"<full Description text from Repair Unit table>","serialNumber":"<Serial Number from Repair Unit table>","warrantyStatus":"<Warranty Status from Repair Unit table exactly as shown>","salesOrder":"<Sales Order number from Repair Unit table>","remarks":"<all text from Comment/Remarks box>","jobType":"<guess: Installation or Breakdown / Repair or Filter Replacement>"}'}
+          ]}]
+        })
+      });
+      if(resp.ok){
+        const data=await resp.json();
+        const text=data.candidates?.[0]?.content?.parts?.[0]?.text||'';
+        console.log('Gemini raw response:',text);
+        const clean=text.replace(/```json|```/g,'').trim();
+        const parsed=JSON.parse(clean);
+        if(parsed.jobId){toast('AI parsed all fields successfully','success');return parsed;}
+      }else{
+        const err=await resp.text();
+        console.warn('Gemini error:',resp.status,err);
+        if(resp.status===400||resp.status===403){localStorage.removeItem('amwayCRM_gemini_key');toast('Invalid API key removed. Try again.','error');}
+      }
+    }catch(e){console.warn('Gemini vision parse failed:',e);}
+  }
+
+  // Fallback: pdf.js regex (will miss table data)
+  toast('AI unavailable, using basic parser (some fields may be empty)','info');
   return await parsePDFWithFallback(pdfBase64);
 }
 
@@ -2528,114 +2659,195 @@ async function generateSignedPDF(jobId){
   if(isSignatureEmpty()){toast('Please sign before generating PDF','error');return;}
   const j=DB.jobs.find(x=>x.id===jobId);if(!j)return;
   const cust=DB.custs.find(c=>c.name===j.customer)||{};
-  const app=j.applianceId?getApplianceById(j.applianceId):null;
-  const appW=app?getApplianceWarrantyStatus(app):{};
-  const dateStr=j.date||todayISO();
-  const dd=new Date(dateStr);
-  const dayNames=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-  const dayName=isNaN(dd)?'':dayNames[dd.getDay()];
-  const fmtDate=isNaN(dd)?dateStr:`${String(dd.getDate()).padStart(2,'0')}/${String(dd.getMonth()+1).padStart(2,'0')}/${dd.getFullYear()}, ${dayName}`;
 
-  // Load jsPDF dynamically
-  if(!window.jspdf){
-    const s=document.createElement('script');s.src='https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
+  // Load pdf-lib for modifying existing PDFs
+  if(!window.PDFLib){
+    const s=document.createElement('script');
+    s.src='https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js';
     document.head.appendChild(s);
     await new Promise(r=>{s.onload=r;s.onerror=()=>{toast('Failed to load PDF library','error');r();}});
   }
-  if(!window.jspdf){toast('PDF library not available','error');return;}
 
-  const{jsPDF}=window.jspdf;
-  const doc=new jsPDF('p','mm','a4');
-  const W=210,margin=20;let y=20;
-  const remarks=document.getElementById('cfRemarks')?document.getElementById('cfRemarks').value:'';
-  const sku=document.getElementById('cfSku')?document.getElementById('cfSku').value:'';
-  const desc=document.getElementById('cfDesc')?document.getElementById('cfDesc').value:'';
-  const serial=document.getElementById('cfSerial')?document.getElementById('cfSerial').value:'';
-  const warranty=document.getElementById('cfWarranty')?document.getElementById('cfWarranty').value:'';
-  const salesOrder=document.getElementById('cfSalesOrder')?document.getElementById('cfSalesOrder').value:'';
+  const sigCanvas=document.getElementById('sigCanvas');
+  const sigPng=sigCanvas.toDataURL('image/png');
+  const sigBytes=Uint8Array.from(atob(sigPng.split(',')[1]),c=>c.charCodeAt(0));
 
-  // Header
-  doc.setFontSize(11);
-  doc.text(`Date: ${fmtDate}`,margin,y);y+=6;
-  doc.text(`Time: ${j.time||''}`,margin,y);y+=6;
-  doc.text(`Address: ${cust.address||''}`,margin,y);y+=6;
+  const now=new Date();
+  const fmtNow=`${String(now.getDate()).padStart(2,'0')}/${String(now.getMonth()+1).padStart(2,'0')}/${now.getFullYear()} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')} ${now.getHours()>=12?'PM':'AM'}`;
 
-  // "Amway" brand + COLLECTION
-  doc.setFontSize(22);doc.setFont('helvetica','bold');
-  doc.text('Amway',W-margin,20,{align:'right'});
-  doc.setFontSize(14);doc.setFont('helvetica','bold');
-  doc.rect(W-margin-42,24,42,10);
-  doc.text('COLLECTION',W-margin-40,31);
-  doc.setFont('helvetica','normal');
+  let pdfBytes;
 
-  y+=4;doc.setLineWidth(0.5);doc.line(margin,y,W-margin,y);y+=8;
+  if(j.pdfAttachment&&window.PDFLib){
+    // === BEST PATH: Overlay signature on the ORIGINAL Amway PDF ===
+    try{
+      const origBytes=Uint8Array.from(atob(j.pdfAttachment.split(',')[1]),c=>c.charCodeAt(0));
+      const pdfDoc=await PDFLib.PDFDocument.load(origBytes);
+      const pages=pdfDoc.getPages();
+      const page=pages[0];
+      const{width,height}=page.getSize();
 
-  doc.setFontSize(13);doc.setFont('helvetica','bold');
-  doc.text(`Job ID ${j.id||''}`,margin,y);y+=10;
-  doc.setFont('helvetica','normal');doc.setFontSize(10);
-  doc.text('This form is to acknowledge receipt of product described on the enclosed job no below have',margin,y);y+=5;
-  doc.text('received the in good condition.',margin,y);y+=12;
+      // Embed signature image
+      const sigImage=await pdfDoc.embedPng(sigBytes);
+      const sigDims=sigImage.scale(0.4); // scale to reasonable size
+
+      // Place signature at bottom-right (matching Amway's layout)
+      // From the PDF analysis: signature area is around x=340-530, y=100-160 (PDF coords, origin bottom-left)
+      const sigX=width-sigDims.width-30;
+      const sigY=210;
+      page.drawImage(sigImage,{x:sigX,y:sigY,width:sigDims.width,height:sigDims.height});
+
+      // Add "Printed Date" text below signature
+      const helvetica=await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
+      page.drawText('Printed Date : '+fmtNow,{x:sigX,y:120,size:9,font:helvetica,color:PDFLib.rgb(0,0,0)});
+
+      pdfBytes=await pdfDoc.save();
+      toast('Signature added to original Amway PDF','success');
+    }catch(err){
+      console.error('PDF overlay failed, using fallback:',err);
+      pdfBytes=await generatePDFFromScratch(j,cust,sigPng,fmtNow);
+    }
+  }else if(window.PDFLib){
+    // No original PDF attached — generate from scratch matching Amway layout exactly
+    pdfBytes=await generatePDFFromScratch(j,cust,sigPng,fmtNow);
+  }else{
+    toast('PDF library not available','error');return;
+  }
+
+  // Download
+  const blob=new Blob([pdfBytes],{type:'application/pdf'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download=`Job_ID_${j.id}_${(cust.name||'').replace(/[^a-zA-Z0-9]/g,'_')}_signed.pdf`;
+  a.click();URL.revokeObjectURL(url);
+
+  // Save to job record
+  const reader=new FileReader();
+  reader.onload=()=>{
+    const i=DB.jobs.findIndex(x=>x.id===jobId);
+    if(i>=0){DB.jobs[i].signedPDF=reader.result;DB.jobs[i].signedAt=now.toISOString();DB.jobs[i]._modifiedAt=Date.now();markTouched('jobs');saveDB();flushPendingSync();}
+  };
+  reader.readAsDataURL(blob);
+  toast('Signed PDF generated & saved','success');
+}
+
+async function generatePDFFromScratch(j,cust,sigPng,fmtNow){
+  // Fallback: create PDF matching Amway layout using pdf-lib
+  const pdfDoc=await PDFLib.PDFDocument.create();
+  const page=pdfDoc.addPage([595.28,841.89]); // A4
+  const helvetica=await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
+  const helveticaBold=await pdfDoc.embedFont(PDFLib.StandardFonts.HelveticaBold);
+  const{width,height}=page.getSize();
+
+  const app=j.applianceId?getApplianceById(j.applianceId):null;
+  const appW=app?getApplianceWarrantyStatus(app):{};
+  const dd=new Date(j.date||Date.now());
+  const dayNames=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const dayName=isNaN(dd)?'':dayNames[dd.getDay()];
+  const fmtDate=isNaN(dd)?j.date:`${String(dd.getDate()).padStart(2,'0')}/${String(dd.getMonth()+1).padStart(2,'0')}/${dd.getFullYear()}, ${dayName}`;
+
+  const remarks=document.getElementById('cfRemarks')?document.getElementById('cfRemarks').value:(j.remarks||j.desc||'');
+  const sku=document.getElementById('cfSku')?document.getElementById('cfSku').value:(j.sku||'');
+  const desc=document.getElementById('cfDesc')?document.getElementById('cfDesc').value:(app?app.model+' - '+app.serial:'');
+  const serial=document.getElementById('cfSerial')?document.getElementById('cfSerial').value:(app?app.serial:'');
+  const warranty=document.getElementById('cfWarranty')?document.getElementById('cfWarranty').value:(j.warrantyIn?'In-warranty':'Out-of-warranty');
+  const salesOrder=document.getElementById('cfSalesOrder')?document.getElementById('cfSalesOrder').value:(j.salesOrder||cust.ada||'');
+  const black=PDFLib.rgb(0,0,0);
+  const white=PDFLib.rgb(1,1,1);
+  const blue=PDFLib.rgb(0,0.4,0.63);
+  let y=height-40;
+
+  // Header - Date, Time, Address (right side, matching original position x=159)
+  const tx=160;
+  page.drawText('Date: '+fmtDate,{x:tx,y:y,size:12,font:helvetica,color:black});y-=20;
+  page.drawText('Time: '+(j.time||''),{x:tx,y:y,size:12,font:helvetica,color:black});y-=20;
+  page.drawText('Address: '+(cust.address||''),{x:tx,y:y,size:12,font:helvetica,color:black});
+
+  // COLLECTION text (top right)
+  page.drawText('COLLECTION',{x:450,y:height-85,size:16,font:helveticaBold,color:black});
+
+  // Horizontal line
+  y=height-135;
+  page.drawLine({start:{x:28,y:y},end:{x:567,y:y},thickness:1,color:black});
+
+  // Job ID
+  y-=20;
+  page.drawText('Job ID '+(j.id||''),{x:71,y:y,size:14,font:helveticaBold,color:black});
+
+  // Body text
+  y-=35;
+  page.drawText('This form is to acknowlege receipt of product described on the enclosed job no below have',{x:28,y:y,size:11,font:helvetica,color:black});
+  y-=16;
+  page.drawText('received the in good condition.',{x:28,y:y,size:11,font:helvetica,color:black});
 
   // Repair Unit header
-  doc.setFont('helvetica','bold');doc.setFontSize(11);
-  doc.text('Repair Unit:',margin,y);y+=6;
-  doc.setFont('helvetica','normal');doc.setFontSize(9);
+  y-=30;
+  page.drawText('Repair Unit:',{x:28,y:y,size:11,font:helveticaBold,color:black});
+  // Underline
+  page.drawLine({start:{x:28,y:y-2},end:{x:93,y:y-2},thickness:0.5,color:black});
 
   // Table header
-  const cols=[margin,margin+22,margin+72,margin+110,margin+140];
-  const colW=[22,50,38,30,W-margin-margin-140];
-  doc.setFillColor(0,102,161);doc.setTextColor(255);
-  doc.rect(margin,y,W-2*margin,7,'F');
-  doc.text('SKU',cols[0]+2,y+5);doc.text('Description',cols[1]+2,y+5);doc.text('Serial Number',cols[2]+2,y+5);doc.text('Warranty',cols[3]+2,y+5);doc.text('Sales Order',cols[4]+2,y+5);
-  y+=7;doc.setTextColor(0);
-  doc.rect(margin,y,W-2*margin,8);
-  doc.text(sku,cols[0]+2,y+5);doc.text(desc,cols[1]+2,y+5);doc.text(serial,cols[2]+2,y+5);doc.text(warranty,cols[3]+2,y+5);doc.text(salesOrder,cols[4]+2,y+5);
-  y+=14;
+  y-=22;
+  const cols=[28,93,292,391,490,566];
+  page.drawRectangle({x:28,y:y-2,width:538,height:16,color:blue});
+  page.drawText('SKU',{x:32,y:y+2,size:9,font:helveticaBold,color:white});
+  page.drawText('Description',{x:97,y:y+2,size:9,font:helveticaBold,color:white});
+  page.drawText('Serial Number',{x:296,y:y+2,size:9,font:helveticaBold,color:white});
+  page.drawText('Warranty Status',{x:395,y:y+2,size:9,font:helveticaBold,color:white});
+  page.drawText('Sales Order',{x:494,y:y+2,size:9,font:helveticaBold,color:white});
+
+  // Table data row
+  y-=18;
+  page.drawRectangle({x:28,y:y-4,width:538,height:20,borderColor:black,borderWidth:0.5});
+  page.drawText(sku,{x:32,y:y+2,size:8,font:helvetica,color:black});
+  page.drawText(desc.substring(0,45),{x:97,y:y+2,size:8,font:helvetica,color:black});
+  page.drawText(serial,{x:296,y:y+2,size:8,font:helvetica,color:black});
+  page.drawText(warranty,{x:395,y:y+2,size:8,font:helvetica,color:black});
+  page.drawText(salesOrder,{x:494,y:y+2,size:8,font:helvetica,color:black});
 
   // Contacts header
-  doc.setFont('helvetica','bold');doc.setFontSize(11);
-  doc.text('Contacts:',margin,y);y+=6;
-  doc.setFont('helvetica','normal');doc.setFontSize(9);
+  y-=35;
+  page.drawText('Contacts:',{x:28,y:y,size:11,font:helveticaBold,color:black});
+  page.drawLine({start:{x:28,y:y-2},end:{x:77,y:y-2},thickness:0.5,color:black});
 
-  const ccols=[margin,margin+35,margin+80,margin+120];
-  doc.setFillColor(0,102,161);doc.setTextColor(255);
-  doc.rect(margin,y,W-2*margin,7,'F');
-  doc.text('ABO/APC ID',ccols[0]+2,y+5);doc.text('Name',ccols[1]+2,y+5);doc.text('Email',ccols[2]+2,y+5);doc.text('Phone',ccols[3]+2,y+5);
-  y+=7;doc.setTextColor(0);
-  doc.rect(margin,y,W-2*margin,8);
-  doc.text(cust.ada||'',ccols[0]+2,y+5);doc.text(cust.name||'',ccols[1]+2,y+5);doc.text(cust.email||'',ccols[2]+2,y+5);doc.text(cust.phone||cust.homePhone||'',ccols[3]+2,y+5);
-  y+=14;
+  // Contacts table header
+  y-=22;
+  page.drawRectangle({x:28,y:y-2,width:538,height:16,color:blue});
+  page.drawText('ABO/APC ID',{x:32,y:y+2,size:9,font:helveticaBold,color:white});
+  page.drawText('Name',{x:170,y:y+2,size:9,font:helveticaBold,color:white});
+  page.drawText('Email',{x:340,y:y+2,size:9,font:helveticaBold,color:white});
+  page.drawText('Phone',{x:470,y:y+2,size:9,font:helveticaBold,color:white});
 
-  // Comment/Remarks
-  doc.setFontSize(10);
-  doc.rect(margin,y,W-2*margin,30);
-  doc.text('Comment/Remarks',margin+3,y+5);
-  const lines=doc.splitTextToSize(remarks,W-2*margin-6);
-  doc.text(lines,margin+3,y+11);
-  y+=36;
+  // Contacts data
+  y-=18;
+  page.drawRectangle({x:28,y:y-4,width:538,height:20,borderColor:black,borderWidth:0.5});
+  page.drawText(cust.ada||'',{x:32,y:y+2,size:9,font:helvetica,color:black});
+  page.drawText(cust.name||'',{x:170,y:y+2,size:9,font:helvetica,color:black});
+  page.drawText(cust.email||'',{x:340,y:y+2,size:9,font:helvetica,color:black});
+  page.drawText(cust.phone||cust.homePhone||'',{x:470,y:y+2,size:9,font:helvetica,color:black});
 
-  doc.text('I acknowledge the product is received in good condition.',margin,y);y+=16;
+  // Comment/Remarks box
+  y-=40;
+  page.drawRectangle({x:28,y:y-60,width:538,height:80,borderColor:PDFLib.rgb(0.4,0.4,0.4),borderWidth:0.5});
+  page.drawText('Comment/Remarks',{x:32,y:y+10,size:10,font:helvetica,color:PDFLib.rgb(0.3,0.3,0.3)});
+  page.drawText(remarks.substring(0,200),{x:38,y:y-10,size:12,font:helvetica,color:black});
 
-  // Signature image
-  const sigCanvas=document.getElementById('sigCanvas');
-  if(sigCanvas){
-    const sigData=sigCanvas.toDataURL('image/png');
-    doc.addImage(sigData,'PNG',W-margin-70,y-10,65,30);
-  }
-  y+=22;
-  doc.line(W-margin-70,y,W-margin,y);y+=5;
-  doc.setFontSize(10);doc.text('Signature of ABO/APC/ Customer',W-margin-70,y);y+=6;
-  doc.setFontSize(9);doc.setTextColor(100);doc.text(`Printed Date: ${fmtDate}`,W-margin-70,y);
+  // Acknowledgment
+  y-=85;
+  page.drawText('I acknowledge the product is received in good condition..',{x:28,y:y,size:11,font:helvetica,color:black});
 
-  // Save
-  const fname=`Job_ID_${j.id}_${(cust.name||'').replace(/[^a-zA-Z0-9]/g,'_')}_signed.pdf`;
-  doc.save(fname);
+  // Signature
+  const sigImage=await pdfDoc.embedPng(Uint8Array.from(atob(sigPng.split(',')[1]),c=>c.charCodeAt(0)));
+  const sigDims=sigImage.scale(0.4);
+  const sigX=width-sigDims.width-30;
+  const sigY=210;
+  page.drawImage(sigImage,{x:sigX,y:sigY,width:sigDims.width,height:sigDims.height});
 
-  // Also save the signed PDF base64 to the job record
-  const pdfBase64=doc.output('datauristring');
-  const i=DB.jobs.findIndex(x=>x.id===jobId);
-  if(i>=0){DB.jobs[i].signedPDF=pdfBase64;DB.jobs[i].signedAt=new Date().toISOString();DB.jobs[i]._modifiedAt=Date.now();markTouched('jobs');saveDB();flushPendingSync();}
-  toast('Signed PDF generated & saved','success');
+  // Signature line
+  page.drawLine({start:{x:sigX,y:sigY-55},end:{x:sigX+sigDims.width,y:sigY-55},thickness:0.5,color:black});
+  page.drawText('Signature of ABO/APC/ Customer',{x:sigX,y:sigY-68,size:10,font:helvetica,color:black});
+  page.drawText('Printed Date : '+fmtNow,{x:sigX,y:sigY-82,size:9,font:helvetica,color:black});
+
+  return await pdfDoc.save();
 }
 
 function saveAndCompleteJob(jobId){
