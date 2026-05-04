@@ -399,6 +399,7 @@ function loadDB(){
     // Import Google Sheets customer data (runs once)
     if(typeof importGoogleSheetsData==='function')importGoogleSheetsData();
     if(typeof importPartsWithPhotos==='function')importPartsWithPhotos();
+    if(typeof fixJobApplianceLinks==='function')fixJobApplianceLinks();
   }catch(e){console.error(e);}
 }
 
@@ -852,7 +853,7 @@ function seedSample(){
 
 // ===== GOOGLE SHEETS IMPORT (one-time) =====
 function importGoogleSheetsData(){
-  if(localStorage.getItem('amwayCRM_gsheets_v2'))return;
+  if(localStorage.getItem('amwayCRM_gsheets_v4'))return;
   const now=Date.now();
   const custs=[
     {name:'Kang Thia Kuang (Steven)',ada:'9228786',address:'102 edgedale plains #07-45 s 828691',phone:'',joined:'2025-09-03'},
@@ -1073,32 +1074,89 @@ function importGoogleSheetsData(){
     {jobId:2378,customer:'PANG KHEE WAN',date:'2025-12-30',time:'14:00',warrantyIn:'x',paymentStatus:'FOC - installation',fault:'FOC Neptune Installation',type:'Installation'},
     {jobId:2383,customer:'BENNY LIU',date:'2025-12-30',time:'16:00',warrantyIn:'x',paymentStatus:'FOC - installation',fault:'FOC Neptune Installation',type:'Installation'},
     // Walk-in tab
-    {jobId:2551,customer:'Vanessa Foo',date:'2025-03-26',collectedOn:'Collecting in May',quoteNum:'2615',paymentStatus:'Paid $38',quoteNumParts:'2626',paymentStatusParts:'Paid $62',fault:'Atmosphere ATS - unable to power',repair:'propose to change power board WTI9052',type:'Breakdown / Repair'},
-    {jobId:2556,customer:'Surakutty Manjumole',date:'2025-03-30',collectedOn:'Collected',quoteNum:'2623',paymentStatus:'Paid $38',quoteNumParts:'2627',paymentStatusParts:'Paid $51',fault:'Leaks from the rim of the cartridge',type:'Breakdown / Repair'},
-    {jobId:2577,customer:'Mr Chew',date:'2025-03-31',collectedOn:'Collected',paymentStatusParts:'FOC',fault:'eSpring Neptune - No power',repair:'change EM and UV',type:'Breakdown / Repair'},
-    {jobId:2565,customer:'Ong Khiang Cheng (Casey)',date:'2025-04-01',collectedOn:'Collected',quoteNum:'2632',paymentStatus:'Paid $38',fault:'Red light / beeping after changing of filter',type:'Breakdown / Repair'},
-    {jobId:2579,customer:'Guo Ying',date:'2025-04-06',collectedOn:'Collected on the spot',paymentStatusParts:'FOC',type:'Breakdown / Repair'},
-    {jobId:2583,customer:'Belle Lee',date:'2025-04-09',collectedOn:'Collected 13/4',quoteNum:'2653',paymentStatus:'Paid $89 (parts $51)',type:'Breakdown / Repair'},
-    {jobId:2589,customer:'Ow Shin Ling',date:'2025-04-07',collectedOn:'Collected 17/4',quoteNum:'2660',paymentStatus:'Paid $38',quoteNumParts:'2661',paymentStatusParts:'Paid $166',fault:'Mini Sky, unable to power on',repair:'change EM',type:'Breakdown / Repair'},
-    {jobId:2602,customer:'Halim (daughter Hanisah)',date:'2025-04-13',paymentStatus:'Waived by Murugan',quoteNumParts:'2701',type:'Breakdown / Repair'},
-    {jobId:2604,customer:'See Pei Ling',date:'2025-04-18',collectedOn:'collected 18/4',paymentStatus:'Waived by Murugan',quoteNumParts:'2702',fault:'odour filter',type:'Breakdown / Repair'},
-    {jobId:2605,customer:'Lee Li Ying',date:'2025-04-20',paymentStatus:'FOC-warranty',quoteNumParts:'2681',paymentStatusParts:'FOC-warranty',fault:'no light at level 1, night',repair:'replace EM - FOC',type:'Breakdown / Repair'},
-    {jobId:2606,customer:'Chong Xin Ru',date:'2025-04-21',collectedOn:'Collected 21/4',quoteNum:'2673',paymentStatus:'Paid $38 / $276',fault:'EM no signal',repair:'change EM',type:'Breakdown / Repair'},
-    {jobId:2608,customer:'Mdm Tan Im Neo',date:'2025-04-21',collectedOn:'Collected 25/4',quoteNum:'2675',paymentStatus:'Paid $38',quoteNumParts:'2676',paymentStatusParts:'Paid $137',fault:'No power',repair:'change EM $75',type:'Breakdown / Repair'},
-    {jobId:2609,customer:'Mdm Tan Im Neo',date:'2025-04-21',collectedOn:'Collected 25/4',quoteNum:'2677',paymentStatus:'Paid $38',quoteNumParts:'2678',paymentStatusParts:'Paid $74',fault:'motor noisy',repair:'change motor',type:'Breakdown / Repair'},
-    {jobId:2610,customer:'Mdm Tan Im Neo',date:'2025-04-21',collectedOn:'Collected 25/4',quoteNum:'2679',paymentStatus:'Paid $38',fault:'general cleaning',type:'Routine Maintenance'},
-    {jobId:2618,customer:'Wong Foong Sin',date:'2025-04-27',paymentStatus:'FOC',quoteNumParts:'2686',paymentStatusParts:'Paid to JW $57',fault:'red light',repair:'filter was not tighten after changed',remarks:'bough an adapter',type:'Breakdown / Repair'},
-    {jobId:2630,customer:'Serene Hah',date:'2025-04-28',collectedOn:'Collected on the spot',quoteNum:'2696',paymentStatus:'Paid to JW $38 / $27',fault:'no power',repair:'change EM $276',type:'Breakdown / Repair'},
-    {jobId:2633,customer:'Mr Lee (Vincent)',date:'2025-04-30',collectedOn:'Collected on the spot',quoteNum:'2706',paymentStatus:'Paid to JW $38',fault:'blinking red and beeping sound',remarks:'reinstall cartridge',type:'Breakdown / Repair'}
+    {jobId:2551,customer:'Vanessa Foo',date:'2025-03-26',collectedOn:'Collecting in May',quoteNum:'2615',paymentStatus:'Paid $38',quoteNumParts:'2626',paymentStatusParts:'Paid $62',fault:'Atmosphere ATS - unable to power',repair:'propose to change power board WTI9052',product:'Atmosphere 101076-M',serial:'090610168Q1AA',type:'Breakdown / Repair'},
+    {jobId:2556,customer:'Surakutty Manjumole',date:'2025-03-30',collectedOn:'Collected',quoteNum:'2623',paymentStatus:'Paid $38',quoteNumParts:'2627',paymentStatusParts:'Paid $51',fault:'Leaks from the rim of the cartridge',product:'eSpring 100188',serial:'071620281AAA',type:'Breakdown / Repair'},
+    {jobId:2577,customer:'Mr Chew',date:'2025-03-31',collectedOn:'Collected',paymentStatusParts:'FOC',fault:'eSpring Neptune - No power',repair:'change EM and UV',product:'eSpring 100188',serial:'241410516KAAC',type:'Breakdown / Repair'},
+    {jobId:2565,customer:'Ong Khiang Cheng (Casey)',date:'2025-04-01',collectedOn:'Collected',quoteNum:'2632',paymentStatus:'Paid $38',fault:'Red light / beeping after changing of filter',product:'eSpring 100188',serial:'112001179JAAA',type:'Breakdown / Repair'},
+    {jobId:2579,customer:'Guo Ying',date:'2025-04-06',collectedOn:'Collected on the spot',paymentStatusParts:'FOC',product:'eSpring 100188',serial:'201320048DAAM',type:'Breakdown / Repair'},
+    {jobId:2583,customer:'Belle Lee',date:'2025-04-09',collectedOn:'Collected 13/4',quoteNum:'2653',paymentStatus:'Paid $89 (parts $51)',product:'eSpring 100188',serial:'111920504IAAA',type:'Breakdown / Repair'},
+    {jobId:2589,customer:'Ow Shin Ling',date:'2025-04-07',collectedOn:'Collected 17/4',quoteNum:'2660',paymentStatus:'Paid $38',quoteNumParts:'2661',paymentStatusParts:'Paid $166',fault:'Mini Sky, unable to power on',repair:'change EM',product:'Atmosphere Mini',serial:'',type:'Breakdown / Repair'},
+    {jobId:2602,customer:'Halim (daughter Hanisah)',date:'2025-04-13',paymentStatus:'Waived by Murugan',quoteNumParts:'2701',product:'eSpring 100188',serial:'171010146DAAM',type:'Breakdown / Repair'},
+    {jobId:2604,customer:'See Pei Ling',date:'2025-04-18',collectedOn:'collected 18/4',paymentStatus:'Waived by Murugan',quoteNumParts:'2702',fault:'odour filter',product:'Atmosphere Sky',serial:'201890287JAAM',type:'Breakdown / Repair'},
+    {jobId:2605,customer:'Lee Li Ying',date:'2025-04-20',paymentStatus:'FOC-warranty',quoteNumParts:'2681',paymentStatusParts:'FOC-warranty',fault:'no light at level 1, night',repair:'replace EM - FOC',product:'Atmosphere Mini Sky',serial:'232120053DAAC',type:'Breakdown / Repair'},
+    {jobId:2606,customer:'Chong Xin Ru',date:'2025-04-21',collectedOn:'Collected 21/4',quoteNum:'2673',paymentStatus:'Paid $38 / $276',fault:'EM no signal',repair:'change EM',product:'eSpring 100188',serial:'212280244HAAC',type:'Breakdown / Repair'},
+    {jobId:2608,customer:'Mdm Tan Im Neo',date:'2025-04-21',collectedOn:'Collected 25/4',quoteNum:'2675',paymentStatus:'Paid $38',quoteNumParts:'2676',paymentStatusParts:'Paid $137',fault:'No power',repair:'change EM $75',product:'ATS 101076',serial:'143300262GAAM',type:'Breakdown / Repair'},
+    {jobId:2609,customer:'Mdm Tan Im Neo',date:'2025-04-21',collectedOn:'Collected 25/4',quoteNum:'2677',paymentStatus:'Paid $38',quoteNumParts:'2678',paymentStatusParts:'Paid $74',fault:'motor noisy',repair:'change motor',product:'Atmosphere Sky',serial:'181140185JAAM',type:'Breakdown / Repair'},
+    {jobId:2610,customer:'Mdm Tan Im Neo',date:'2025-04-21',collectedOn:'Collected 25/4',quoteNum:'2679',paymentStatus:'Paid $38',fault:'general cleaning',product:'Atmosphere Sky',serial:'200620037JAAM',type:'Routine Maintenance'},
+    {jobId:2618,customer:'Wong Foong Sin',date:'2025-04-27',paymentStatus:'FOC',quoteNumParts:'2686',paymentStatusParts:'Paid to JW $57',fault:'red light',repair:'filter was not tighten after changed',remarks:'bough an adapter',product:'eSpring 100188',serial:'01940368BAAA',type:'Breakdown / Repair'},
+    {jobId:2630,customer:'Serene Hah',date:'2025-04-28',collectedOn:'Collected on the spot',quoteNum:'2696',paymentStatus:'Paid to JW $38 / $27',fault:'no power',repair:'change EM $276',product:'eSpring 100188',serial:'213160374HAAC',type:'Breakdown / Repair'},
+    {jobId:2633,customer:'Mr Lee (Vincent)',date:'2025-04-30',collectedOn:'Collected on the spot',quoteNum:'2706',paymentStatus:'Paid to JW $38',fault:'blinking red and beeping sound',remarks:'reinstall cartridge',product:'eSpring 100188',serial:'121980526AAA',type:'Breakdown / Repair'}
   ];
   jobs.forEach(jd=>{
     if(!jd.customer)return;
-    if(jd.jobId&&DB.jobs.find(x=>x.id===jd.jobId))return;
     const cust=DB.custs.find(c=>c.name===jd.customer);
+    const existingJob=jd.jobId?DB.jobs.find(x=>x.id===jd.jobId):null;
+    if(existingJob){
+      // Update existing job with missing fields
+      let ch=false;
+      if(!existingJob.applianceId){
+        let app=null;
+        if(jd.serial)app=DB.appliances.find(a=>a.serial===jd.serial);
+        if(!app&&cust){const ca=DB.appliances.filter(a=>a.custId===cust.id);if(ca.length===1)app=ca[0];}
+        if(!app&&jd.product&&jd.serial&&cust){
+          app={id:DB.nextIds.a++,custId:cust.id,model:jd.product,serial:jd.serial||'N/A',installDate:jd.date||'',warrantyMonths:12,location:'',_modifiedAt:now};
+          DB.appliances.push(app);markTouched('appliances');
+        }
+        if(app){existingJob.applianceId=app.id;existingJob.appliance=app.model+' ('+app.serial+')';ch=true;}
+      }
+      if(!existingJob.warrantyIn&&jd.warrantyIn){existingJob.warrantyIn=jd.warrantyIn;ch=true;}
+      if(!existingJob.warrantyOut&&jd.warrantyOut){existingJob.warrantyOut=jd.warrantyOut;ch=true;}
+      if(!existingJob.quoteNum&&jd.quoteNum){existingJob.quoteNum=jd.quoteNum;ch=true;}
+      if(!existingJob.quoteNumParts&&jd.quoteNumParts){existingJob.quoteNumParts=jd.quoteNumParts;ch=true;}
+      if(!existingJob.paymentStatus&&jd.paymentStatus){existingJob.paymentStatus=jd.paymentStatus;ch=true;}
+      if(!existingJob.paymentStatusParts&&jd.paymentStatusParts){existingJob.paymentStatusParts=jd.paymentStatusParts;ch=true;}
+      if(!existingJob.desc&&jd.fault){existingJob.desc=jd.fault;ch=true;}
+      if(!existingJob.repair&&jd.repair){existingJob.repair=jd.repair;ch=true;}
+      if(!existingJob.remarks&&jd.remarks){existingJob.remarks=jd.remarks;ch=true;}
+      if(!existingJob.collectedOn&&jd.collectedOn){existingJob.collectedOn=jd.collectedOn;ch=true;}
+      if(ch){existingJob._modifiedAt=now;markTouched('jobs');}
+      return;
+    }
     const rec={id:jd.jobId||DB.nextIds.j++,title:jd.fault||jd.type||'Service',customer:jd.customer,applianceId:null,appliance:'',type:jd.type||'Breakdown / Repair',priority:'Medium',date:jd.date||'',time:jd.time||'',warrantyIn:jd.warrantyIn||'',warrantyOut:jd.warrantyOut||'',quoteNum:jd.quoteNum||'',quoteNumParts:jd.quoteNumParts||'',paymentStatus:jd.paymentStatus||'',paymentStatusParts:jd.paymentStatusParts||'',desc:jd.fault||'',repair:jd.repair||'',remarks:jd.remarks||'',collectedOn:jd.collectedOn||'',techIds:[],status:'Completed',createdAt:new Date(jd.date||Date.now()).toISOString(),_modifiedAt:now};
-    if(cust){const apps=DB.appliances.filter(a=>a.custId===cust.id);if(apps.length===1){rec.applianceId=apps[0].id;rec.appliance=apps[0].model+' ('+apps[0].serial+')';}}
+    // Link appliance by serial number first, then by customer
+    if(cust){
+      let app=null;
+      if(jd.serial)app=DB.appliances.find(a=>a.serial===jd.serial);
+      if(!app){const custApps=DB.appliances.filter(a=>a.custId===cust.id);if(custApps.length===1)app=custApps[0];}
+      if(!app&&jd.product&&jd.serial){
+        app={id:DB.nextIds.a++,custId:cust.id,model:jd.product,serial:jd.serial||'N/A',installDate:jd.date||'',warrantyMonths:12,location:'',_modifiedAt:now};
+        DB.appliances.push(app);markTouched('appliances');
+      }
+      if(app){rec.applianceId=app.id;rec.appliance=app.model+' ('+app.serial+')';}
+    }
     DB.jobs.push(rec);
     if(jd.jobId&&jd.jobId>=DB.nextIds.j)DB.nextIds.j=jd.jobId+1;
+  });
+  markTouched('jobs');
+
+  // Fix existing jobs missing appliance links
+  DB.jobs.forEach(j=>{
+    if(j.applianceId)return; // already linked
+    const cust=DB.custs.find(c=>c.name===j.customer);
+    if(!cust)return;
+    const custApps=DB.appliances.filter(a=>a.custId===cust.id);
+    if(custApps.length===1){j.applianceId=custApps[0].id;j.appliance=custApps[0].model+' ('+custApps[0].serial+')';j._modifiedAt=now;}
+    else if(custApps.length>1){
+      // Try to match by product name in fault/title
+      const txt=(j.desc||'')+' '+(j.title||'');
+      const match=custApps.find(a=>{
+        const m=(a.model||'').toLowerCase();
+        if(m.includes('espring')&&/espring|neptune/i.test(txt))return true;
+        if(m.includes('atmosphere')&&/atmosphere|ats|sky|mini/i.test(txt))return true;
+        return false;
+      });
+      if(match){j.applianceId=match.id;j.appliance=match.model+' ('+match.serial+')';j._modifiedAt=now;}
+    }
   });
   markTouched('jobs');
 
@@ -1108,7 +1166,7 @@ function importGoogleSheetsData(){
   markTouched('custs');
 
   try{localStorage.setItem(DB_KEY,JSON.stringify(DB));}catch(e){}
-  localStorage.setItem('amwayCRM_gsheets_v2','1');
+  localStorage.setItem('amwayCRM_gsheets_v4','1');
   console.log('Google Sheets v2 imported: '+custs.length+' customers, '+apps.length+' appliances, '+jobs.length+' jobs');
 }
 
@@ -1279,6 +1337,148 @@ function importPartsWithPhotos(){
   markTouched('parts');
   try{localStorage.setItem(DB_KEY,JSON.stringify(DB));}catch(e){}
   console.log('Parts photos check complete: '+partsData.length+' parts processed');
+}
+
+// ===== FIX JOB-APPLIANCE LINKS (runs every load) =====
+function fixJobApplianceLinks(){
+  const now=Date.now();let fixed=0,created=0;
+
+  // Walk-in product-serial mapping
+  const walkInProducts={
+    2551:{product:'Atmosphere 101076-M',serial:'090610168Q1AA'},
+    2556:{product:'eSpring 100188',serial:'071620281AAA'},
+    2577:{product:'eSpring 100188',serial:'241410516KAAC'},
+    2565:{product:'eSpring 100188',serial:'112001179JAAA'},
+    2579:{product:'eSpring 100188',serial:'201320048DAAM'},
+    2583:{product:'eSpring 100188',serial:'111920504IAAA'},
+    2589:{product:'Atmosphere Mini',serial:''},
+    2602:{product:'eSpring 100188',serial:'171010146DAAM'},
+    2604:{product:'Atmosphere Sky',serial:'201890287JAAM'},
+    2605:{product:'Atmosphere Mini Sky',serial:'232120053DAAC'},
+    2606:{product:'eSpring 100188',serial:'212280244HAAC'},
+    2608:{product:'ATS 101076',serial:'143300262GAAM'},
+    2609:{product:'Atmosphere Sky',serial:'181140185JAAM'},
+    2610:{product:'Atmosphere Sky',serial:'200620037JAAM'},
+    2618:{product:'eSpring 100188',serial:'01940368BAAA'},
+    2630:{product:'eSpring 100188',serial:'213160374HAAC'},
+    2633:{product:'eSpring 100188',serial:'121980526AAA'}
+  };
+
+  // Detect product model from fault/description text
+  function detectProduct(txt){
+    txt=(txt||'').toLowerCase();
+    if(/neptune/i.test(txt))return 'eSpring Neptune';
+    if(/espring|e-spring|esp/i.test(txt))return 'eSpring Water Purifier';
+    if(/atmosphere.*mini.*sky|mini\s*sky/i.test(txt))return 'Atmosphere Mini Sky';
+    if(/atmosphere.*mini|mini.*atmosphere/i.test(txt))return 'Atmosphere Mini';
+    if(/atmosphere.*sky|sky.*atmosphere|ats.*sky/i.test(txt))return 'Atmosphere Sky';
+    if(/atmosphere|ats/i.test(txt))return 'Atmosphere Air Purifier';
+    if(/cartridge|filter|diverter|faucet|leaking|beeping|red light|blinking|uv/i.test(txt))return 'eSpring Water Purifier';
+    if(/hepa|odour|odor|motor|cup.*red/i.test(txt))return 'Atmosphere Air Purifier';
+    if(/bluetooth/i.test(txt))return 'Atmosphere Air Purifier';
+    return '';
+  }
+
+  // Step 1: Ensure every customer with a job has at least one appliance
+  DB.jobs.forEach(j=>{
+    const cust=DB.custs.find(c=>c.name===j.customer);
+    if(!cust)return;
+    const custApps=DB.appliances.filter(a=>a.custId===cust.id);
+
+    // Walk-in: create from known serial
+    const wip=walkInProducts[j.id];
+    if(wip&&wip.serial&&!DB.appliances.find(a=>a.serial===wip.serial)){
+      DB.appliances.push({id:DB.nextIds.a++,custId:cust.id,model:wip.product,serial:wip.serial,installDate:j.date||'',warrantyMonths:12,location:'',_modifiedAt:now});
+      markTouched('appliances');created++;
+    }
+
+    // ABO customers: create appliance from fault description if none exists
+    if(custApps.length===0&&!wip){
+      const model=detectProduct(j.desc||j.title||j.type);
+      if(model){
+        DB.appliances.push({id:DB.nextIds.a++,custId:cust.id,model:model,serial:'TBD-'+cust.id,installDate:j.date||'',warrantyMonths:12,location:'',_modifiedAt:now});
+        markTouched('appliances');created++;
+      }
+    }
+  });
+
+  // Step 2: Link all unlinked jobs to appliances
+  DB.jobs.forEach(j=>{
+    if(j.applianceId)return;
+    const cust=DB.custs.find(c=>c.name===j.customer);
+    if(!cust)return;
+
+    let app=null;
+    // Walk-in serial match
+    const wip=walkInProducts[j.id];
+    if(wip&&wip.serial)app=DB.appliances.find(a=>a.serial===wip.serial);
+
+    // Single appliance per customer
+    if(!app){const ca=DB.appliances.filter(a=>a.custId===cust.id);if(ca.length===1)app=ca[0];}
+
+    // Fuzzy match by product type
+    if(!app){
+      const ca=DB.appliances.filter(a=>a.custId===cust.id);
+      const model=detectProduct(j.desc||j.title||j.type);
+      if(model)app=ca.find(a=>(a.model||'').toLowerCase().includes(model.split(' ')[0].toLowerCase()));
+    }
+
+    if(app){
+      j.applianceId=app.id;
+      j.appliance=app.model+' ('+app.serial+')';
+      j._modifiedAt=now;
+      fixed++;
+    }
+  });
+
+  if(fixed>0||created>0){markTouched('jobs');saveDB();console.log('Appliances created: '+created+', jobs linked: '+fixed);}
+
+  // Step 3: Create partChanges from repair descriptions
+  const partMap=[
+    {pattern:/change\s*adapt|adapter/i,partCode:'WTI0420B3',partName:'eSpring Service Power Adaptor'},
+    {pattern:/change\s*filter|replace.*filter|new\s*filter/i,partCode:'100186M3',partName:'eSpring Cartridge'},
+    {pattern:/change\s*em|replace.*em|new\s*em/i,partCode:'WTI0417Z1 / WTI0900Z',partName:'eSpring Electronics Module (EM)'},
+    {pattern:/change\s*motor|replace.*motor/i,partCode:'WTI1041Z',partName:'SKY Service Volute Motor Assembly'},
+    {pattern:/change\s*faucet|replace.*faucet/i,partCode:'100663T5',partName:'eSpring Auxiliary Faucet'},
+    {pattern:/change\s*diverter|replace.*diverter/i,partCode:'400582T1',partName:'eSpring Diverter'},
+    {pattern:/change\s*uv|replace.*uv/i,partCode:'WTI1118Z',partName:'UV Assembly'},
+    {pattern:/change\s*cartridge|replace.*cartridge/i,partCode:'100186M3',partName:'eSpring Cartridge'},
+    {pattern:/installation|install/i,partCode:'',partName:''},
+    {pattern:/replace.*power\s*board/i,partCode:'WTI0956',partName:'ATS Power Board'},
+    {pattern:/tighten/i,partCode:'',partName:''}
+  ];
+  let pcCreated=0;
+  DB.jobs.forEach(j=>{
+    if(!j.repair||!j.applianceId)return;
+    // Skip if partChange already exists for this job
+    if(DB.partChanges.find(pc=>pc.jobId===j.id))return;
+    const cust=DB.custs.find(c=>c.name===j.customer);
+    if(!cust)return;
+    partMap.forEach(pm=>{
+      if(!pm.partCode)return;
+      if(!pm.pattern.test(j.repair))return;
+      const part=DB.parts.find(p=>p.code===pm.partCode);
+      DB.partChanges.push({
+        id:DB.nextIds.pc++,
+        jobId:j.id,
+        reportId:null,
+        custId:cust.id,
+        applianceId:j.applianceId,
+        partId:part?part.id:null,
+        partCode:pm.partCode,
+        partName:pm.partName,
+        installDate:j.date||'',
+        warrantyEnd:'',
+        source:'job-import',
+        sourceLabel:'Imported from Google Sheets',
+        price:part?part.price:0,
+        createdAt:j.createdAt||new Date().toISOString(),
+        _modifiedAt:now
+      });
+      pcCreated++;
+    });
+  });
+  if(pcCreated>0){markTouched('partChanges');saveDB();console.log('Part changes created: '+pcCreated);}
 }
 
 // ===== AUTH =====
