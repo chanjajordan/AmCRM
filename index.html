@@ -1338,10 +1338,25 @@ function importPartsWithPhotos(){
 }
 
 // ===== FIX JOB-APPLIANCE LINKS (runs every load) =====
+
+// Detect product model from fault/description text
+function detectProduct(txt){
+  txt=(txt||'').toLowerCase();
+  if(/neptune/i.test(txt))return 'eSpring Neptune';
+  if(/espring|e-spring|esp/i.test(txt))return 'eSpring Water Purifier';
+  if(/atmosphere.*mini.*sky|mini\s*sky/i.test(txt))return 'Atmosphere Mini Sky';
+  if(/atmosphere.*mini|mini.*atmosphere/i.test(txt))return 'Atmosphere Mini';
+  if(/atmosphere.*sky|sky.*atmosphere|ats.*sky/i.test(txt))return 'Atmosphere Sky';
+  if(/atmosphere|ats/i.test(txt))return 'Atmosphere Air Purifier';
+  if(/cartridge|filter|diverter|faucet|leaking|beeping|red light|blinking|uv/i.test(txt))return 'eSpring Water Purifier';
+  if(/hepa|odour|odor|motor|cup.*red/i.test(txt))return 'Atmosphere Air Purifier';
+  if(/bluetooth/i.test(txt))return 'Atmosphere Air Purifier';
+  return '';
+}
+
 function fixJobApplianceLinks(){
   const now=Date.now();let fixed=0,created=0;
 
-  // Walk-in product-serial mapping
   const walkInProducts={
     2551:{product:'Atmosphere 101076-M',serial:'090610168Q1AA'},
     2556:{product:'eSpring 100188',serial:'071620281AAA'},
@@ -1361,21 +1376,6 @@ function fixJobApplianceLinks(){
     2630:{product:'eSpring 100188',serial:'213160374HAAC'},
     2633:{product:'eSpring 100188',serial:'121980526AAA'}
   };
-
-  // Detect product model from fault/description text
-  function detectProduct(txt){
-    txt=(txt||'').toLowerCase();
-    if(/neptune/i.test(txt))return 'eSpring Neptune';
-    if(/espring|e-spring|esp/i.test(txt))return 'eSpring Water Purifier';
-    if(/atmosphere.*mini.*sky|mini\s*sky/i.test(txt))return 'Atmosphere Mini Sky';
-    if(/atmosphere.*mini|mini.*atmosphere/i.test(txt))return 'Atmosphere Mini';
-    if(/atmosphere.*sky|sky.*atmosphere|ats.*sky/i.test(txt))return 'Atmosphere Sky';
-    if(/atmosphere|ats/i.test(txt))return 'Atmosphere Air Purifier';
-    if(/cartridge|filter|diverter|faucet|leaking|beeping|red light|blinking|uv/i.test(txt))return 'eSpring Water Purifier';
-    if(/hepa|odour|odor|motor|cup.*red/i.test(txt))return 'Atmosphere Air Purifier';
-    if(/bluetooth/i.test(txt))return 'Atmosphere Air Purifier';
-    return '';
-  }
 
   // Step 1: Ensure every customer with a job has at least one appliance
   DB.jobs.forEach(j=>{
@@ -2025,8 +2025,15 @@ function openJobModal(data){
     `<input type="hidden" id="eJId" value="${d.id||''}">
     <input type="hidden" id="jDraftKey" value="${draftKey}">
     <div class="fg"><label>Job Title *</label><input class="fc" id="jTi" value="${E(d.title||'')}" placeholder="e.g. Filter replacement, Breakdown service"></div>
-    <div class="fr"><div class="fg"><label>Customer *</label><select class="fc" id="jCu" onchange="onJobCustChange()"><option value="">— Select —</option>${custOpts}</select></div>
+    <div class="fr"><div class="fg"><label>Customer *</label><input class="fc" id="jCu" list="jCuList" value="${E(d.customer||'')}" placeholder="Type or select customer" oninput="onJobCustChange()" onchange="onJobCustChange()"><datalist id="jCuList">${custOpts}</datalist></div>
     <div class="fg"><label>Appliance</label><select class="fc" id="jApp"><option value="">— None / TBD —</option></select></div></div>
+    <div id="jNewCustFields" style="display:none;border:1px dashed var(--bdr);border-radius:8px;padding:12px;margin-bottom:12px">
+      <div style="font-size:12px;color:var(--ok);font-weight:600;margin-bottom:8px">➕ New customer — fill details:</div>
+      <div class="fg"><label>Address</label><input class="fc" id="jCuAddr" value="" placeholder="Full address"></div>
+      <div class="fr"><div class="fg"><label>Phone</label><input class="fc" id="jCuPhone" value="" placeholder="Phone number"></div>
+      <div class="fg"><label>ABO/APC ID</label><input class="fc" id="jCuAda" value="" placeholder="ABO ID"></div></div>
+      <div class="fg"><label>Serial Number (new appliance)</label><input class="fc" id="jCuSerial" value="" placeholder="e.g. 253230449NABC"></div>
+    </div>
     <div class="fr"><div class="fg"><label>Service Type *</label><select class="fc" id="jTy"><option>Breakdown / Repair</option><option>Routine Maintenance</option><option>Filter Replacement</option><option>Installation</option><option>Inspection</option><option>Warranty Claim</option></select></div>
     <div class="fg"><label>Priority</label><select class="fc" id="jPr"><option>Low</option><option selected>Medium</option><option>High</option><option>Urgent</option></select></div></div>
     <div class="fr"><div class="fg"><label>Date</label><input class="fc" type="date" id="jDt" value="${E(d.date||todayISO())}"></div>
@@ -2047,7 +2054,7 @@ function openJobModal(data){
   if(d.type){const sel=document.getElementById('jTy');[...sel.options].forEach(o=>{if(o.value===d.type)o.selected=true;});}
   if(d.priority){document.getElementById('jPr').value=d.priority;}
   if(d.customer){onJobCustChange();setTimeout(()=>{if(d.applianceId)document.getElementById('jApp').value=d.applianceId;},50);}
-  startFormDraft(draftKey,['eJId','jTi','jCu','jApp','jTy','jPr','jDt','jTm','jWi','jWo','jQn','jQp','jPs','jPsD','jPp','jDs','jRp','jRm','jCo']);
+  startFormDraft(draftKey,['eJId','jTi','jCu','jApp','jTy','jPr','jDt','jTm','jWi','jWo','jQn','jQp','jPs','jPsD','jPp','jDs','jRp','jRm','jCo','jCuAddr','jCuPhone','jCuAda','jCuSerial']);
   if(!isEditing){
     setTimeout(async()=>{
       const restore=await offerDraftRestore(draftKey,'job');
@@ -2063,25 +2070,67 @@ function closeJobModal(savedOK){
   endFormDraft();closeModal();
 }
 function onJobCustChange(){
-  const name=document.getElementById('jCu').value;
+  const name=document.getElementById('jCu').value.trim();
   const cust=DB.custs.find(c=>c.name===name);
   const sel=document.getElementById('jApp');
-  if(!cust){sel.innerHTML='<option value="">— Select customer first —</option>';return;}
-  const apps=DB.appliances.filter(a=>a.custId===cust.id);
-  sel.innerHTML='<option value="">— None / TBD —</option>'+apps.map(a=>{const s=getApplianceWarrantyStatus(a);return`<option value="${a.id}">${E(a.model)} (${E(a.serial)}) — ${E(s.label)}</option>`}).join('');
+  const newFields=document.getElementById('jNewCustFields');
+  if(!name){sel.innerHTML='<option value="">— Type customer name first —</option>';if(newFields)newFields.style.display='none';return;}
+  if(cust){
+    // Existing customer — show their appliances, hide new customer fields
+    if(newFields)newFields.style.display='none';
+    const apps=DB.appliances.filter(a=>a.custId===cust.id);
+    sel.innerHTML='<option value="">— None / TBD —</option>'+apps.map(a=>{const s=getApplianceWarrantyStatus(a);return`<option value="${a.id}">${E(a.model)} (${E(a.serial)}) — ${E(s.label)}</option>`}).join('');
+  }else{
+    // New customer — show address/phone fields
+    if(newFields)newFields.style.display='block';
+    sel.innerHTML='<option value="">— Will create with job —</option>';
+  }
 }
 function editJob(id){const j=DB.jobs.find(x=>x.id===id);if(!j)return;openJobModal(j);}
 function saveJob(){
   const eid=document.getElementById('eJId').value;
   const techIds=[...document.querySelectorAll('.jTeChk:checked')].map(c=>parseInt(c.value));
-  const customer=document.getElementById('jCu').value;
-  const applianceId=parseInt(document.getElementById('jApp').value)||null;
-  const app=applianceId?getApplianceById(applianceId):null;
+  const customer=document.getElementById('jCu').value.trim();
+  const title=document.getElementById('jTi').value.trim();
   const psCustom=document.getElementById('jPsD').value.trim();
   const psSelect=document.getElementById('jPs').value;
-  const d={title:document.getElementById('jTi').value.trim(),customer,applianceId,appliance:app?`${app.model} (${app.serial})`:'',type:document.getElementById('jTy').value,priority:document.getElementById('jPr').value,date:document.getElementById('jDt').value,time:document.getElementById('jTm').value,warrantyIn:document.getElementById('jWi').value,warrantyOut:document.getElementById('jWo').value,quoteNum:document.getElementById('jQn').value.trim(),quoteNumParts:document.getElementById('jQp').value.trim(),paymentStatus:psCustom||psSelect,paymentStatusParts:document.getElementById('jPp').value.trim(),desc:document.getElementById('jDs').value.trim(),repair:document.getElementById('jRp').value.trim(),remarks:document.getElementById('jRm').value.trim(),collectedOn:document.getElementById('jCo').value.trim(),techIds,status:techIds.length?'Assigned':'Open',_modifiedAt:Date.now()};
-  if(!d.title){toast('Job title required','error');return;}
-  if(!d.customer){toast('Select a customer','error');return;}
+  const desc=document.getElementById('jDs').value.trim();
+
+  if(!title){toast('Job title required','error');return;}
+  if(!customer){toast('Enter a customer name','error');return;}
+
+  // Auto-create customer if not in database
+  let cust=DB.custs.find(c=>c.name===customer);
+  if(!cust){
+    const addr=(document.getElementById('jCuAddr')?document.getElementById('jCuAddr').value:'').trim();
+    const phone=(document.getElementById('jCuPhone')?document.getElementById('jCuPhone').value:'').trim();
+    const ada=(document.getElementById('jCuAda')?document.getElementById('jCuAda').value:'').trim();
+    cust={id:DB.nextIds.c++,name:customer,ada:ada,address:addr,phone:phone,homePhone:'',email:'',joined:todayISO(),_modifiedAt:Date.now()};
+    DB.custs.push(cust);markTouched('custs');
+    toast('New customer created: '+customer,'success');
+  }
+
+  // Auto-create appliance if serial number provided and not in database
+  const serialInput=document.getElementById('jCuSerial');
+  const serial=serialInput?serialInput.value.trim():'';
+  let applianceId=parseInt(document.getElementById('jApp').value)||null;
+  let app=applianceId?getApplianceById(applianceId):null;
+
+  if(serial&&!DB.appliances.find(a=>a.serial===serial)){
+    const model=detectProduct(desc||title||'');
+    app={id:DB.nextIds.a++,custId:cust.id,model:model||'Unknown',serial:serial,installDate:document.getElementById('jDt').value||todayISO(),warrantyMonths:12,location:'',_modifiedAt:Date.now()};
+    DB.appliances.push(app);markTouched('appliances');
+    applianceId=app.id;
+    toast('New appliance created: '+serial,'success');
+  }
+
+  // Auto-link if customer has exactly one appliance
+  if(!applianceId&&cust){
+    const custApps=DB.appliances.filter(a=>a.custId===cust.id);
+    if(custApps.length===1){applianceId=custApps[0].id;app=custApps[0];}
+  }
+
+  const d={title:title,customer:customer,applianceId:applianceId,appliance:app?app.model+' ('+app.serial+')':'',type:document.getElementById('jTy').value,priority:document.getElementById('jPr').value,date:document.getElementById('jDt').value,time:document.getElementById('jTm').value,warrantyIn:document.getElementById('jWi').value,warrantyOut:document.getElementById('jWo').value,quoteNum:document.getElementById('jQn').value.trim(),quoteNumParts:document.getElementById('jQp').value.trim(),paymentStatus:psCustom||psSelect,paymentStatusParts:document.getElementById('jPp').value.trim(),desc:desc,repair:document.getElementById('jRp').value.trim(),remarks:document.getElementById('jRm').value.trim(),collectedOn:document.getElementById('jCo').value.trim(),techIds,status:techIds.length?'Assigned':'Open',_modifiedAt:Date.now()};
   if(eid){const i=DB.jobs.findIndex(j=>j.id===parseInt(eid));if(i>=0)DB.jobs[i]={...DB.jobs[i],...d};}
   else{d.id=DB.nextIds.j++;d.createdAt=new Date().toISOString();DB.jobs.push(d);}
   markTouched('jobs');saveDB();closeJobModal(true);renderJobs();updCounts();flushPendingSync();toast('Job saved','success');
@@ -2132,9 +2181,10 @@ function importAmwayPDF(){
         }else if(custName){
           const ec=DB.custs.find(c=>c.name===custName);
           if(ec){
-            if(!ec.address&&parsed.address){ec.address=parsed.address;ec._modifiedAt=Date.now();}
-            if(!ec.phone&&parsed.phone){ec.phone=parsed.phone;ec._modifiedAt=Date.now();}
-            if(!ec.ada&&parsed.aboId){ec.ada=parsed.aboId;ec._modifiedAt=Date.now();}
+            if(parsed.address){ec.address=parsed.address;ec._modifiedAt=Date.now();}
+            if(parsed.phone){ec.phone=parsed.phone;ec._modifiedAt=Date.now();}
+            if(parsed.aboId){ec.ada=parsed.aboId;ec._modifiedAt=Date.now();}
+            if(parsed.email){ec.email=parsed.email;ec._modifiedAt=Date.now();}
             markTouched('custs');
           }
         }
@@ -2295,7 +2345,7 @@ async function parseWithClaude(pdfBase64){
 }
 
 async function parsePDFWithFallback(pdfBase64){
-  // Load pdf.js
+  // Load pdf.js for rendering
   if(!window.pdfjsLib){
     const s=document.createElement('script');
     s.src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
@@ -2303,125 +2353,120 @@ async function parsePDFWithFallback(pdfBase64){
     await new Promise(r=>{s.onload=r;s.onerror=()=>r();});
     if(window.pdfjsLib)pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
   }
-  if(!window.pdfjsLib)throw new Error('PDF library not available');
+  if(!window.pdfjsLib){toast('PDF library not available','error');return {};}
 
   const b64=pdfBase64.split(',')[1];
-  const raw=atob(b64);
-  const arr=new Uint8Array(raw.length);
+  const raw=atob(b64);const arr=new Uint8Array(raw.length);
   for(let i=0;i<raw.length;i++)arr[i]=raw.charCodeAt(i);
-
   const pdf=await pdfjsLib.getDocument({data:arr}).promise;
-  // Extract all text items with positions for table reconstruction
-  let items=[];
-  for(let i=1;i<=pdf.numPages;i++){
-    const page=await pdf.getPage(i);
-    const tc=await page.getTextContent();
-    tc.items.forEach(it=>{
-      if(it.str.trim())items.push({text:it.str.trim(),x:Math.round(it.transform[4]),y:Math.round(it.transform[5])});
-    });
-  }
-  // Sort by y descending (top of page first), then x ascending
-  items.sort((a,b)=>b.y-a.y||a.x-b.x);
+  const page=await pdf.getPage(1);
 
-  // Build lines by grouping items with similar y values
-  const lines=[];
-  let curLine=[];let curY=null;
-  items.forEach(it=>{
-    if(curY===null||Math.abs(it.y-curY)>5){
-      if(curLine.length)lines.push(curLine.map(c=>c.text).join(' '));
-      curLine=[it];curY=it.y;
-    }else{curLine.push(it);}
-  });
-  if(curLine.length)lines.push(curLine.map(c=>c.text).join(' '));
+  // Extract text layer (gets header fields: Date, Time, Address, Job ID, remarks)
+  const tc=await page.getTextContent();
+  const textItems=tc.items.map(it=>({text:it.str.trim(),y:Math.round(it.transform[5]),x:Math.round(it.transform[4])})).filter(it=>it.text);
+  textItems.sort((a,b)=>b.y-a.y||a.x-b.x);
+  const fullText=textItems.map(it=>it.text).join(' ');
 
-  const fullText=lines.join('\n');
-  console.log('PDF text extracted:',fullText);
-
-  // Parse with improved regex
   const r={};
 
-  // Job ID
-  const jm=fullText.match(/Job\s*ID\s*(\d+)/i);
-  if(jm)r.jobId=parseInt(jm[1]);
-
-  // Date: DD/MM/YYYY
+  // Parse text-layer fields (always available)
+  const jm=fullText.match(/Job\s*ID\s*(\d+)/i);if(jm)r.jobId=parseInt(jm[1]);
   const dm=fullText.match(/Date[:\s]*(\d{1,2})\/(\d{1,2})\/(\d{4})/i);
   if(dm)r.date=dm[3]+'-'+dm[2].padStart(2,'0')+'-'+dm[1].padStart(2,'0');
+  const tm=fullText.match(/Time[:\s]*([^A]*(?:am|pm|\d{1,2}:\d{2})[^A]*?)(?:\s*Address|$)/i);
+  if(tm)r.time=normalizeTime(tm[1].trim());
+  const am=fullText.match(/Address[:\s]*(.+?)(?=Job\s*ID|$)/is);
+  if(am)r.address=am[1].replace(/COLLECTION/gi,'').replace(/\s+/g,' ').trim();
 
-  // Time
-  const tm=fullText.match(/Time[:\s]*([^\n]+)/i);
-  if(tm)r.time=tm[1].replace(/Address.*/i,'').trim();
+  // Get remarks (text after Job ID that isn't a header)
+  const remarksItem=textItems.find(it=>it.y<textItems.find(t=>/Job/i.test(t.text))?.y-50);
+  if(remarksItem)r.remarks=remarksItem.text;
 
-  // Address - everything after "Address:" until end of that section
-  const am=fullText.match(/Address[:\s]*(.+?)(?=COLLECTION|Job\s*ID|\n\n)/is);
-  if(am)r.address=am[1].replace(/\n/g,' ').replace(/COLLECTION/gi,'').trim();
+  // Render page to high-res canvas for OCR of table fields
+  toast('Reading table data with OCR...','info');
+  const scale=3;
+  const vp=page.getViewport({scale});
+  const canvas=document.createElement('canvas');
+  canvas.width=vp.width;canvas.height=vp.height;
+  const ctx=canvas.getContext('2d');
+  await page.render({canvasContext:ctx,viewport:vp}).promise;
 
-  // Serial Number (pattern: digits followed by letters like NABC, KAAC, etc)
-  const sm=fullText.match(/(\d{6,15}[A-Z]{3,4})/);
-  if(sm)r.serialNumber=sm[1];
-
-  // SKU (6-digit number near product description)
-  const skm=fullText.match(/(\d{6})\s+\d{6}/);
-  if(skm)r.sku=skm[1];
-
-  // Product description - look for "ASG" pattern or text between SKU and serial
-  const dscm=fullText.match(/ASG\s*[-–]\s*([^,\n]+)/i);
-  if(dscm)r.productDescription=dscm[1].trim();
-  else{
-    // Try to find product name near serial number
-    const pdm=fullText.match(/(\d{6})\s+([\w\s-]+?(?:Water|Purifier|Filter|Air|eSpring|Atmosphere|Neptune)[^\n]*)/i);
-    if(pdm)r.productDescription=pdm[2].trim();
+  // Load Tesseract.js for OCR
+  if(!window.Tesseract){
+    const s=document.createElement('script');
+    s.src='https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.1.1/tesseract.min.js';
+    document.head.appendChild(s);
+    await new Promise(r=>{s.onload=r;s.onerror=()=>{toast('OCR library failed to load','error');r();}});
   }
 
-  // Warranty Status
-  if(/In-warranty|In warranty/i.test(fullText))r.warrantyStatus='In-warranty';
-  else if(/Out.of.warranty/i.test(fullText))r.warrantyStatus='Out-of-warranty';
+  if(window.Tesseract){
+    try{
+      const s=scale;const pw=595;
+      const worker=await Tesseract.createWorker('eng');
 
-  // Sales Order (10+ digit number)
-  const som=fullText.match(/(\d{10,13})/);
-  if(som)r.salesOrder=som[1];
+      // OCR Repair Unit table (Y=220-300 points)
+      const rc=document.createElement('canvas');
+      const ry0=Math.round(220*s),ry1=Math.round(300*s);
+      rc.width=Math.round(pw*s);rc.height=ry1-ry0;
+      rc.getContext('2d').drawImage(canvas,0,ry0,rc.width,rc.height,0,0,rc.width,rc.height);
+      const rep=await worker.recognize(rc);
+      const repText=rep.data.text;
+      console.log('Repair Unit OCR:',repText);
 
-  // ABO/APC ID and Customer Name - look in contacts table area
-  // Pattern: 7-13 digit number followed by name in caps
-  const contactArea=fullText.match(/ABO.*?ID[\s\S]*?(\d{7,13})\s+([A-Z][A-Z\s]+[A-Z])/);
-  if(contactArea){r.aboId=contactArea[1];r.customerName=contactArea[2].trim();}
-  // Alternative: find name and number near each other
-  if(!r.customerName){
-    const nm=fullText.match(/(\d{7,13})\s+([A-Z][A-Z\s]{3,}[A-Z])\s/);
-    if(nm){r.aboId=nm[1];r.customerName=nm[2].trim();}
+      // Parse repair table
+      const repLines=repText.split('\n').filter(l=>l.trim()&&!/SKU|Description|Serial|Warranty|Sales|Repair Unit/i.test(l));
+      const repAll=repLines.join(' ');
+      const skuM=repAll.match(/(\d{5,6}\w?)/);if(skuM)r.sku=skuM[1];
+      const snM=repAll.match(/(\d{9,15}[A-Z]{3,4})/);if(snM)r.serialNumber=snM[1];
+      const soM=repAll.match(/(\d{10,13})/);if(soM)r.salesOrder=soM[1];
+      if(/In.warranty/i.test(repAll))r.warrantyStatus='In-warranty';
+      else if(/Out.warranty/i.test(repAll))r.warrantyStatus='Out-of-warranty';
+      const descM=repAll.match(/ASG\s*[-—]\s*(.+?)\s+\d{9}/i);
+      if(descM)r.productDescription=descM[1].trim();
+      if(!r.productDescription){const d2=repAll.match(/\d{6}\w?\s+(.+?)\s+\d{9}/);if(d2)r.productDescription=d2[1].trim();}
+
+      // OCR Contacts table (Y=310-380 points)
+      const cc=document.createElement('canvas');
+      const cy0=Math.round(310*s),cy1=Math.round(380*s);
+      cc.width=Math.round(pw*s);cc.height=cy1-cy0;
+      cc.getContext('2d').drawImage(canvas,0,cy0,cc.width,cc.height,0,0,cc.width,cc.height);
+      const con=await worker.recognize(cc);
+      const conText=con.data.text;
+      console.log('Contacts OCR:',conText);
+
+      // Parse contacts table
+      const conLines=conText.split('\n').filter(l=>l.trim()&&!/ABO|Name|Email|Phone|Contact/i.test(l));
+      const conAll=conLines.join(' ');
+      const aboM=conAll.match(/(\d{7,13})/);if(aboM)r.aboId=aboM[1];
+      const phones=conAll.match(/\d{8,}/g);if(phones)r.phone=phones[phones.length-1];
+      if(r.aboId){const nm=conAll.match(new RegExp(r.aboId+'\\s+([A-Za-z][A-Za-z .]+)'));if(nm)r.customerName=nm[1].replace(/\d{8,}$/,'').trim();}
+
+      // OCR Remarks (Y=390-460 points)
+      const mc=document.createElement('canvas');
+      const my0=Math.round(390*s),my1=Math.round(460*s);
+      mc.width=Math.round(pw*s);mc.height=my1-my0;
+      mc.getContext('2d').drawImage(canvas,0,my0,mc.width,mc.height,0,0,mc.width,mc.height);
+      const rem=await worker.recognize(mc);
+      const remText=rem.data.text;
+      console.log('Remarks OCR:',remText);
+      const remClean=remText.split('\n').filter(l=>l.trim()&&!/Comment|Remark|acknowledge/i.test(l)).join(' ').trim();
+      if(remClean)r.remarks=remClean;
+
+      await worker.terminate();
+      toast('OCR extracted all table data','success');
+    }catch(e){console.warn('OCR failed:',e);toast('OCR failed - some fields may be empty','error');}
   }
-
-  // Phone (8-digit Singapore number)
-  const pm=fullText.match(/(?:Phone|Contact|HP)[\s:]*(\d{8})/i)||fullText.match(/(\d{8})\s*$/m);
-  if(pm)r.phone=pm[1];
-
-  // Remarks - text after Job ID line that isn't a table header
-  const remarkLines=[];
-  let foundJobId=false;
-  lines.forEach(l=>{
-    if(/Job\s*ID/i.test(l)){foundJobId=true;return;}
-    if(foundJobId&&!/Repair|SKU|Description|Serial|Warranty|Sales|Contact|ABO|Name|Email|Phone|Comment|acknowledge|Signature|Printed|Date|Time|Address/i.test(l)){
-      const cleaned=l.trim();
-      if(cleaned&&cleaned.length>2)remarkLines.push(cleaned);
-      foundJobId=false; // only take first line after Job ID
-    }
-  });
-  if(remarkLines.length)r.remarks=remarkLines[0];
-
-  // Also check Comment/Remarks section
-  const cm=fullText.match(/Comment\s*\/?\s*Remarks?\s*\n?\s*(.+?)(?:\n\s*I acknowledge|$)/is);
-  if(cm&&cm[1].trim())r.remarks=cm[1].trim();
-
-  // Job type from remarks
-  const rt=(r.remarks||r.productDescription||'').toLowerCase();
-  if(/install/i.test(rt))r.jobType='Installation';
-  else if(/filter|cartridge/i.test(rt))r.jobType='Filter Replacement';
-  else if(/maintenance|cleaning/i.test(rt))r.jobType='Routine Maintenance';
-  else r.jobType='Breakdown / Repair';
 
   r.email='';
+  if(!r.jobType){
+    const rt=(r.remarks||r.productDescription||'').toLowerCase();
+    if(/install/i.test(rt))r.jobType='Installation';
+    else if(/filter|cartridge/i.test(rt))r.jobType='Filter Replacement';
+    else r.jobType='Breakdown / Repair';
+  }
   return r;
 }
+
 
 // ===== GOOGLE SHEETS AUTO-SYNC (daily) =====
 const GSHEET_ID='11_SLCY6GOOlK_vmW9b1OlWwzVZsIZpv5SWk0tDV93sg';
@@ -2587,7 +2632,7 @@ function openCollectionForm(jobId){
     <div style="font-size:14px;font-weight:700;margin-bottom:8px;text-decoration:underline">Repair Unit:</div>
     <table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:20px">
       <tr style="background:#0066a1;color:#fff"><th style="border:1px solid #333;padding:6px">SKU</th><th style="border:1px solid #333;padding:6px">Description</th><th style="border:1px solid #333;padding:6px">Serial Number</th><th style="border:1px solid #333;padding:6px">Warranty Status</th><th style="border:1px solid #333;padding:6px">Sales Order</th></tr>
-      <tr><td style="border:1px solid #ccc;padding:6px;text-align:center"><input class="fc" id="cfSku" value="" style="width:80px;text-align:center;font-size:12px"></td><td style="border:1px solid #ccc;padding:6px"><input class="fc" id="cfDesc" value="${E(app?app.model+' - '+app.serial:'')}" style="width:100%;font-size:12px"></td><td style="border:1px solid #ccc;padding:6px;text-align:center"><input class="fc" id="cfSerial" value="${E(app?app.serial:'')}" style="width:100%;font-size:12px"></td><td style="border:1px solid #ccc;padding:6px;text-align:center"><select class="fc" id="cfWarranty" style="font-size:12px"><option${appW.status==='active'?' selected':''}>In-warranty</option><option>Out-of-warranty</option></select></td><td style="border:1px solid #ccc;padding:6px;text-align:center"><input class="fc" id="cfSalesOrder" value="${E(cust.ada||'')}" style="width:100%;font-size:12px"></td></tr>
+      <tr><td style="border:1px solid #ccc;padding:6px;text-align:center"><input class="fc" id="cfSku" value="${E(j.sku||'')}" style="width:80px;text-align:center;font-size:12px"></td><td style="border:1px solid #ccc;padding:6px"><input class="fc" id="cfDesc" value="${E(app?app.model+' - '+app.serial:j.desc||'')}" style="width:100%;font-size:12px"></td><td style="border:1px solid #ccc;padding:6px;text-align:center"><input class="fc" id="cfSerial" value="${E(app?app.serial:'')}" style="width:100%;font-size:12px"></td><td style="border:1px solid #ccc;padding:6px;text-align:center"><select class="fc" id="cfWarranty" style="font-size:12px"><option${j.warrantyIn==='x'||appW.status==='active'?' selected':''}>In-warranty</option><option${j.warrantyOut==='x'?' selected':''}>Out-of-warranty</option></select></td><td style="border:1px solid #ccc;padding:6px;text-align:center"><input class="fc" id="cfSalesOrder" value="${E(j.salesOrder||cust.ada||'')}" style="width:100%;font-size:12px"></td></tr>
     </table>
 
     <!-- Contacts table -->
@@ -2691,12 +2736,12 @@ async function generateSignedPDF(jobId){
       // Place signature at bottom-right (matching Amway's layout)
       // From the PDF analysis: signature area is around x=340-530, y=100-160 (PDF coords, origin bottom-left)
       const sigX=width-sigDims.width-30;
-      const sigY=210;
+      const sigY=255;
       page.drawImage(sigImage,{x:sigX,y:sigY,width:sigDims.width,height:sigDims.height});
 
       // Add "Printed Date" text below signature
       const helvetica=await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
-      page.drawText('Printed Date : '+fmtNow,{x:sigX,y:120,size:9,font:helvetica,color:PDFLib.rgb(0,0,0)});
+      page.drawText('Printed Date : '+fmtNow,{x:sigX,y:135,size:9,font:helvetica,color:PDFLib.rgb(0,0,0)});
 
       pdfBytes=await pdfDoc.save();
       toast('Signature added to original Amway PDF','success');
@@ -2837,7 +2882,7 @@ async function generatePDFFromScratch(j,cust,sigPng,fmtNow){
   const sigImage=await pdfDoc.embedPng(Uint8Array.from(atob(sigPng.split(',')[1]),c=>c.charCodeAt(0)));
   const sigDims=sigImage.scale(0.4);
   const sigX=width-sigDims.width-30;
-  const sigY=210;
+  const sigY=255;
   page.drawImage(sigImage,{x:sigX,y:sigY,width:sigDims.width,height:sigDims.height});
 
   // Signature line
