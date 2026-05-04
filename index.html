@@ -739,8 +739,6 @@ function syncDBToCloud(){
     // Sync PDFs separately to their own node
     syncJobPDFs(pdfCache);
   }).catch(err=>{
-    _fbSyncBusy=false;updSync('ok');
-  }).catch(err=>{
     _fbSyncBusy=false;updSync('error');
     console.warn('FB DB sync failed:',err);
   });
@@ -759,7 +757,8 @@ function syncJobPDFs(pdfCache){
 // Pull PDFs from Firebase for jobs that don't have them locally
 function pullJobPDFs(){
   if(!fbDB)return;
-  fbDB.ref(FB_PDF_NODE).once('value',snap=>{
+  // Use .on() instead of .once() so new PDFs arrive in realtime
+  fbDB.ref(FB_PDF_NODE).on('value',snap=>{
     const pdfs=snap.val();if(!pdfs)return;
     let loaded=0;
     Object.entries(pdfs).forEach(([jobId,data])=>{
@@ -768,7 +767,12 @@ function pullJobPDFs(){
       if(!j.pdfAttachment&&data.pdfAttachment){j.pdfAttachment=data.pdfAttachment;j.pdfName=data.pdfName||'amway.pdf';loaded++;}
       if(!j.signedPDF&&data.signedPDF){j.signedPDF=data.signedPDF;loaded++;}
     });
-    if(loaded>0){try{localStorage.setItem(DB_KEY,JSON.stringify(DB));}catch(e){}console.log('Pulled '+loaded+' PDFs from cloud');}
+    if(loaded>0){
+      try{localStorage.setItem(DB_KEY,JSON.stringify(DB));}catch(e){}
+      console.log('Pulled '+loaded+' PDFs from cloud');
+      // Re-render jobs if user is logged in and on jobs page
+      if(CUR_USER){try{renderJobs();}catch(e){}}
+    }
   });
 }
 
