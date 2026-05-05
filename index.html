@@ -1708,30 +1708,49 @@ function prBd(p){const m={Urgent:'bd-er',High:'bd-er',Medium:'bd-wn',Low:'bd-ok'
 function jsBd(s){const m={Open:'bd-ac',Assigned:'bd-pu','In Progress':'bd-wn',Completed:'bd-ok',Cancelled:'bd-er'};return`<span class="bd ${m[s]||'bd-ac'}">${E(s||'Open')}</span>`;}
 
 // ===== CUSTOMERS =====
-function renderCusts(view){
-  const vw=view||'all';
+function _custCardHtml(c){
+  const apps=DB.appliances.filter(a=>a.custId===c.id);
+  return `<div class="rpt-card">
+    <div class="rpt-card-top"><span style="font-weight:700">${E(c.name)}</span><span class="bd bd-gd">${E(c.ada||'No ABO#')}</span></div>
+    <div class="rpt-card-row"><span class="rc-label">Phone</span><span class="rc-val"><a href="https://wa.me/${(c.phone||'').replace(/[^0-9]/g,'')}" target="_blank" style="color:var(--wa);text-decoration:none">${E(c.phone)}</a>${c.homePhone?' / '+E(c.homePhone):''}</span></div>
+    <div class="rpt-card-row"><span class="rc-label">Email</span><span class="rc-val">${c.email?`<a href="mailto:${E(c.email)}" style="color:var(--ac);text-decoration:none">${E(c.email)}</a>`:'—'}</span></div>
+    <div class="rpt-card-row"><span class="rc-label">Address</span><span class="rc-val">${E(c.address)}</span></div>
+    <div class="rpt-card-row"><span class="rc-label">Appliances</span><span class="rc-val">${apps.length} unit(s)</span></div>
+    <div class="rpt-card-actions">
+      <button class="btn btn-sm btn-s" onclick="viewCustDetail(${c.id})">📋 Details</button>
+      ${canEdit()?`<button class="btn btn-sm btn-s" onclick="editCust(${c.id})">Edit</button>`:''}
+      ${canDelete()?`<button class="btn btn-sm btn-d" onclick="delCust(${c.id})">Remove</button>`:''}
+    </div>
+  </div>`;
+}
+function _filterAndSortCusts(vw,sq){
   let cs=DB.custs.slice();
   if(vw==='recent')cs=cs.sort((a,b)=>(b._modifiedAt||0)-(a._modifiedAt||0)).slice(0,20);
   else cs=cs.sort((a,b)=>(a.name||'').localeCompare(b.name||''));
+  if(sq){const q=sq.toLowerCase();cs=cs.filter(c=>(c.ada||'').toLowerCase().includes(q)||(c.name||'').toLowerCase().includes(q)||(c.phone||'').includes(sq));}
+  return cs;
+}
+// Filter list only — does NOT touch the search input, preserves cursor + focus
+function filterCustList(){
+  const vw=window._custView||'all';
   const sq=(document.getElementById('custSearch')||{}).value||'';
-  if(sq)cs=cs.filter(c=>(c.ada||'').includes(sq)||(c.name||'').toLowerCase().includes(sq.toLowerCase()));
-  document.getElementById('customersContent').innerHTML=`<div class="tw"><div class="th"><h3>Customers (${cs.length})</h3><div style="display:flex;gap:8px;flex-wrap:wrap"><input class="fc" id="custSearch" value="${E(sq)}" placeholder="Search ABO ID or Name" style="width:180px;padding:6px 10px;font-size:13px" oninput="renderCusts('${vw}')"> ${canEdit()?'<button class="btn btn-p btn-sm" onclick="openCustModal()">+ Add Customer</button>':''}</div></div>
+  const cs=_filterAndSortCusts(vw,sq);
+  const listEl=document.getElementById('custList');
+  const cntEl=document.getElementById('custCount');
+  if(cntEl)cntEl.textContent=cs.length;
+  if(listEl)listEl.innerHTML=cs.length?cs.map(_custCardHtml).join(''):'<div class="es"><p>No customers found.</p></div>';
+}
+function renderCusts(view){
+  const vw=view||window._custView||'all';
+  window._custView=vw;
+  const sq=(document.getElementById('custSearch')||{}).value||'';
+  const cs=_filterAndSortCusts(vw,sq);
+  document.getElementById('customersContent').innerHTML=`<div class="tw"><div class="th"><h3>Customers (<span id="custCount">${cs.length}</span>)</h3><div style="display:flex;gap:8px;flex-wrap:wrap"><input class="fc" id="custSearch" value="${E(sq)}" placeholder="Search ABO ID, Name, or Phone" style="width:200px;padding:6px 10px;font-size:13px" oninput="filterCustList()"> ${canEdit()?'<button class="btn btn-p btn-sm" onclick="openCustModal()">+ Add Customer</button>':''}</div></div>
     <div class="flex-row" style="margin:12px 0">
       <button class="fc-chip ${vw==='all'?'active':''}" onclick="renderCusts('all')">All (A-Z)</button>
       <button class="fc-chip ${vw==='recent'?'active':''}" onclick="renderCusts('recent')">Recent</button>
     </div>
-    ${cs.length?cs.map(c=>{const apps=DB.appliances.filter(a=>a.custId===c.id);return`<div class="rpt-card">
-      <div class="rpt-card-top"><span style="font-weight:700">${E(c.name)}</span><span class="bd bd-gd">${E(c.ada||'No ABO#')}</span></div>
-      <div class="rpt-card-row"><span class="rc-label">Phone</span><span class="rc-val"><a href="https://wa.me/${(c.phone||'').replace(/[^0-9]/g,'')}" target="_blank" style="color:var(--wa);text-decoration:none">${E(c.phone)}</a>${c.homePhone?' / '+E(c.homePhone):''}</span></div>
-      <div class="rpt-card-row"><span class="rc-label">Email</span><span class="rc-val">${c.email?`<a href="mailto:${E(c.email)}" style="color:var(--ac);text-decoration:none">${E(c.email)}</a>`:'—'}</span></div>
-      <div class="rpt-card-row"><span class="rc-label">Address</span><span class="rc-val">${E(c.address)}</span></div>
-      <div class="rpt-card-row"><span class="rc-label">Appliances</span><span class="rc-val">${apps.length} unit(s)</span></div>
-      <div class="rpt-card-actions">
-        <button class="btn btn-sm btn-s" onclick="viewCustDetail(${c.id})">📋 Details</button>
-        ${canEdit()?`<button class="btn btn-sm btn-s" onclick="editCust(${c.id})">Edit</button>`:''}
-        ${canDelete()?`<button class="btn btn-sm btn-d" onclick="delCust(${c.id})">Remove</button>`:''}
-      </div>
-    </div>`}).join(''):'<div class="es"><p>No customers found.</p></div>'}
+    <div id="custList">${cs.length?cs.map(_custCardHtml).join(''):'<div class="es"><p>No customers found.</p></div>'}</div>
   </div>`;
 }
 function openCustModal(data){
