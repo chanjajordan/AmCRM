@@ -257,6 +257,29 @@ tr:last-child td{border-bottom:none}
 .sync-pill.local{background:rgba(160,128,128,.15);color:var(--t3)}
 .sync-pill.local .dot{animation:none}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* Notification bell */
+.notif-bell{position:relative;width:36px;height:36px;border-radius:50%;background:transparent;border:1px solid var(--bdr);color:var(--t1);display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all var(--tr);padding:0;flex-shrink:0}
+.notif-bell:hover{background:var(--input);border-color:var(--ac)}
+.notif-bell.has-new{animation:bellShake .6s ease-in-out 1}
+@keyframes bellShake{0%,100%{transform:rotate(0)}25%{transform:rotate(-15deg)}50%{transform:rotate(0)}75%{transform:rotate(15deg)}}
+.notif-badge{position:absolute;top:-2px;right:-2px;background:var(--er);color:#fff;font-size:10px;font-weight:700;min-width:18px;height:18px;border-radius:9px;padding:0 5px;display:flex;align-items:center;justify-content:center;border:2px solid var(--card)}
+.notif-panel{position:absolute;top:54px;right:16px;width:340px;max-width:calc(100vw - 24px);max-height:70vh;background:var(--card);border:1px solid var(--bdr);border-radius:var(--rl);box-shadow:0 8px 28px rgba(0,0,0,.25);z-index:1000;display:flex;flex-direction:column;overflow:hidden}
+.notif-head{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-bottom:1px solid var(--bdr);background:var(--input)}
+.notif-list{flex:1;overflow-y:auto;max-height:50vh}
+.notif-item{padding:10px 14px;border-bottom:1px solid var(--bdr);cursor:pointer;transition:background var(--tr);display:flex;gap:10px;align-items:flex-start}
+.notif-item:hover{background:var(--input)}
+.notif-item.unread{background:var(--input);border-left:3px solid var(--ac)}
+.notif-icon{flex-shrink:0;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;background:var(--bg)}
+.notif-body{flex:1;min-width:0}
+.notif-title{font-size:12px;font-weight:600;color:var(--t1);margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.notif-msg{font-size:11px;color:var(--t2);margin-bottom:3px;line-height:1.4}
+.notif-time{font-size:10px;color:var(--t3)}
+.notif-empty{padding:30px 14px;text-align:center;color:var(--t3);font-size:13px}
+.notif-foot{padding:8px 14px;border-top:1px solid var(--bdr);background:var(--input);display:flex;justify-content:space-between;align-items:center}
+.btn-link{background:none;border:none;color:var(--ac);cursor:pointer;font-size:13px;padding:2px 6px;border-radius:4px}
+.btn-link:hover{background:var(--bg)}
+@media (max-width:480px){.notif-panel{right:8px;left:8px;width:auto}}
 </style>
 </head>
 <body>
@@ -331,6 +354,15 @@ tr:last-child td{border-bottom:none}
         <div class="tb-t" id="pageTitle">Dashboard</div>
       </div>
       <div class="tb-a">
+        <button class="notif-bell" id="notifBell" onclick="toggleNotifPanel()" aria-label="Notifications" title="Notifications">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <span class="notif-badge" id="notifBadge" style="display:none">0</span>
+        </button>
+        <div class="notif-panel" id="notifPanel" style="display:none">
+          <div class="notif-head"><strong>Notifications</strong><div style="display:flex;gap:4px"><button class="btn-link" onclick="markAllNotifRead()" title="Mark all read">✓</button><button class="btn-link" onclick="clearAllNotifs()" title="Clear all">🗑</button><button class="btn-link" onclick="toggleNotifPanel()">×</button></div></div>
+          <div id="notifList" class="notif-list"></div>
+          <div class="notif-foot"><label style="font-size:11px;display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="notifSoundChk" onchange="toggleNotifSound()"> Sound</label><button class="btn-link" onclick="requestNotifPermission()" id="notifPermBtn" style="font-size:11px">Enable browser pops</button></div>
+        </div>
         <span class="sync-pill" id="syncStatus" title="Calendar shared with field service team"><span class="dot"></span><span style="display:none" class="sync-text">Shared</span></span>
       </div>
     </div>
@@ -658,6 +690,171 @@ function mergeCloudIntoLocal(local,cloud){
     merged[k]=cloud[k];
   });
   return merged;
+}
+
+
+// ===== Notification system =====
+const NOTIF_KEY='amwayCRM_notifs_v1';
+const NOTIF_SOUND_KEY='amwayCRM_notif_sound';
+const NOTIF_LAST_SEEN_KEY='amwayCRM_notif_lastSeen';
+const NOTIF_MAX=50;
+let _notifs=[];
+let _notifSound=false;
+let _notifPanelOpen=false;
+let _jobSnapshot={}; // id -> {status,_modifiedAt} for diffing
+let _notifReady=false;
+
+function loadNotifs(){
+  try{
+    _notifs=JSON.parse(localStorage.getItem(NOTIF_KEY)||'[]');
+    _notifSound=localStorage.getItem(NOTIF_SOUND_KEY)==='1';
+  }catch(e){_notifs=[];}
+}
+function saveNotifs(){
+  try{localStorage.setItem(NOTIF_KEY,JSON.stringify(_notifs.slice(0,NOTIF_MAX)));}catch(e){}
+}
+function addNotif(type,title,msg,jobId){
+  // De-dup: skip if same job+type within last 3s
+  const now=Date.now();
+  const recent=_notifs.find(n=>n.jobId===jobId&&n.type===type&&(now-n.ts)<3000);
+  if(recent)return;
+  _notifs.unshift({id:now+'-'+Math.random().toString(36).slice(2,6),type,title,msg,jobId:jobId||null,ts:now,read:false});
+  if(_notifs.length>NOTIF_MAX)_notifs.length=NOTIF_MAX;
+  saveNotifs();
+  updateNotifBadge();
+  if(_notifPanelOpen)renderNotifList();
+  // Shake bell
+  const bell=document.getElementById('notifBell');
+  if(bell){bell.classList.remove('has-new');void bell.offsetWidth;bell.classList.add('has-new');}
+  // Sound
+  if(_notifSound)playNotifBeep();
+  // Browser notification (only if tab not focused)
+  if(!document.hasFocus()&&'Notification' in window&&Notification.permission==='granted'){
+    try{
+      const n=new Notification(title,{body:msg,icon:'data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22><circle cx=%2212%22 cy=%2212%22 r=%2210%22 fill=%22%23ff3b30%22/></svg>',tag:'crm-'+(jobId||'gen')});
+      n.onclick=()=>{window.focus();if(jobId)showPage('jobs');n.close();};
+      setTimeout(()=>n.close(),8000);
+    }catch(e){console.warn('Browser notif failed:',e);}
+  }
+}
+function playNotifBeep(){
+  try{
+    const ctx=new (window.AudioContext||window.webkitAudioContext)();
+    const o=ctx.createOscillator(),g=ctx.createGain();
+    o.connect(g);g.connect(ctx.destination);
+    o.frequency.value=880;o.type='sine';
+    g.gain.setValueAtTime(0,ctx.currentTime);
+    g.gain.linearRampToValueAtTime(.15,ctx.currentTime+.02);
+    g.gain.linearRampToValueAtTime(0,ctx.currentTime+.25);
+    o.start();o.stop(ctx.currentTime+.3);
+  }catch(e){}
+}
+function updateNotifBadge(){
+  const badge=document.getElementById('notifBadge');
+  if(!badge)return;
+  const unread=_notifs.filter(n=>!n.read).length;
+  if(unread>0){badge.textContent=unread>99?'99+':unread;badge.style.display='flex';}
+  else badge.style.display='none';
+}
+function fmtNotifTime(ts){
+  const diff=Date.now()-ts;
+  if(diff<60000)return 'just now';
+  if(diff<3600000)return Math.floor(diff/60000)+'m ago';
+  if(diff<86400000)return Math.floor(diff/3600000)+'h ago';
+  return new Date(ts).toLocaleDateString();
+}
+function notifIcon(type){
+  return {created:'➕',status:'🔄',assigned:'👤',completed:'✅',cancelled:'❌',deleted:'🗑'}[type]||'📢';
+}
+function renderNotifList(){
+  const list=document.getElementById('notifList');
+  if(!list)return;
+  if(!_notifs.length){list.innerHTML='<div class="notif-empty">No notifications yet</div>';return;}
+  list.innerHTML=_notifs.map(n=>`<div class="notif-item ${n.read?'':'unread'}" onclick="onNotifClick('${n.id}',${n.jobId||'null'})">
+    <div class="notif-icon">${notifIcon(n.type)}</div>
+    <div class="notif-body">
+      <div class="notif-title">${escHTML(n.title)}</div>
+      <div class="notif-msg">${escHTML(n.msg)}</div>
+      <div class="notif-time">${fmtNotifTime(n.ts)}</div>
+    </div>
+  </div>`).join('');
+}
+function escHTML(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function onNotifClick(id,jobId){
+  const n=_notifs.find(x=>x.id===id);
+  if(n){n.read=true;saveNotifs();updateNotifBadge();renderNotifList();}
+  if(jobId&&jobId!=='null'){
+    toggleNotifPanel();
+    showPage('jobs');
+    setTimeout(()=>{const inp=document.getElementById('jobSearchId');if(inp){inp.value=jobId;if(typeof searchJobById==='function')searchJobById();}},150);
+  }
+}
+function toggleNotifPanel(){
+  const p=document.getElementById('notifPanel');
+  if(!p)return;
+  _notifPanelOpen=!_notifPanelOpen;
+  p.style.display=_notifPanelOpen?'flex':'none';
+  if(_notifPanelOpen){
+    renderNotifList();
+    const chk=document.getElementById('notifSoundChk');if(chk)chk.checked=_notifSound;
+    const pb=document.getElementById('notifPermBtn');
+    if(pb){
+      if('Notification' in window){
+        if(Notification.permission==='granted')pb.style.display='none';
+        else if(Notification.permission==='denied'){pb.textContent='🔕 Blocked by browser';pb.disabled=true;}
+      } else pb.style.display='none';
+    }
+  }
+}
+function markAllNotifRead(){_notifs.forEach(n=>n.read=true);saveNotifs();updateNotifBadge();renderNotifList();}
+function clearAllNotifs(){if(_notifs.length&&!confirm('Clear all notifications?'))return;_notifs=[];saveNotifs();updateNotifBadge();renderNotifList();}
+function toggleNotifSound(){_notifSound=document.getElementById('notifSoundChk').checked;localStorage.setItem(NOTIF_SOUND_KEY,_notifSound?'1':'0');}
+function requestNotifPermission(){
+  if(!('Notification' in window)){toast('Browser notifications not supported','error');return;}
+  Notification.requestPermission().then(p=>{
+    if(p==='granted'){toast('Browser notifications enabled','success');const pb=document.getElementById('notifPermBtn');if(pb)pb.style.display='none';}
+    else toast('Permission '+p,'info');
+  });
+}
+function snapshotJobs(){
+  const snap={};
+  (DB.jobs||[]).forEach(j=>{snap[j.id]={status:j.status,_modifiedAt:j._modifiedAt||0,customer:j.customer,title:j.title};});
+  return snap;
+}
+function diffJobsAndNotify(prevSnap,suppressInitial){
+  if(suppressInitial)return; // initial load — no notifs
+  const curr=DB.jobs||[];
+  const prevIds=new Set(Object.keys(prevSnap).map(Number));
+  curr.forEach(j=>{
+    if(!j||j.id==null)return;
+    const prev=prevSnap[j.id];
+    if(!prev){
+      // New job
+      addNotif('created','New Job #'+j.id,(j.customer||'Unknown')+' — '+(j.title||'Service Job'),j.id);
+    } else {
+      // Status change
+      if(prev.status!==j.status&&j.status){
+        const t=j.status==='Completed'?'completed':j.status==='Cancelled'?'cancelled':j.status==='Assigned'?'assigned':'status';
+        addNotif(t,'Job #'+j.id+' → '+j.status,(j.customer||'')+': '+(prev.status||'?')+' → '+j.status,j.id);
+      }
+    }
+  });
+}
+function initNotifs(){
+  loadNotifs();
+  updateNotifBadge();
+  _jobSnapshot=snapshotJobs();
+  _notifReady=true;
+  // Close panel on outside click
+  document.addEventListener('click',e=>{
+    if(!_notifPanelOpen)return;
+    const p=document.getElementById('notifPanel');
+    const b=document.getElementById('notifBell');
+    if(!p||!b)return;
+    if(!p.contains(e.target)&&!b.contains(e.target)){_notifPanelOpen=false;p.style.display='none';}
+  });
+  // Refresh time labels every 60s while panel open
+  setInterval(()=>{if(_notifPanelOpen)renderNotifList();},60000);
 }
 
 // Record a deletion so cloud merges respect it
@@ -4195,6 +4392,7 @@ function resetDB(){if(!confirm('This wipes ALL data and re-seeds with the BUILT-
 // ===== INIT =====
 function init(){
   loadDB();
+  if(typeof initNotifs==='function')initNotifs();
   // Resume session — read from localStorage so it survives tab/browser restart.
   // Also accept the legacy sessionStorage key from older versions.
   try{
