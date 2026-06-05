@@ -2278,12 +2278,12 @@ function renderJobs(filter){
         ${j.collectedOn?`<div class="rpt-card-row"><span class="rc-label">Collected</span><span class="rc-val">${E(j.collectedOn)}</span></div>`:''}
         <div style="display:flex;gap:6px;margin:8px 0;flex-wrap:wrap">
           ${j.pdfAttachment?`<button class="btn btn-sm" style="background:#1a73e8;color:#fff" onclick="viewJobPDF(${j.id})">📎 View Amway PDF</button><button class="btn btn-sm btn-d" onclick="removeJobPDF(${j.id})" title="Remove PDF">✕</button>`:`<button class="btn btn-sm" style="background:#1a73e8;color:#fff" onclick="attachJobPDF(${j.id})">📎 Attach Amway PDF</button>`}
-          ${j.status!=='Completed'?`<button class="btn btn-sm" style="background:#0066a1;color:#fff" onclick="openCollectionForm(${j.id})">✍️ Collection Form</button>`:''}
+          <button class="btn btn-sm" style="background:#0066a1;color:#fff" onclick="openCollectionForm(${j.id})">${j.status==='Completed'?'📋 View Collection Form':'✍️ Collection Form'}</button>
           ${j.signedPDF?`<button class="btn btn-sm" style="background:#188038;color:#fff" onclick="viewSignedPDF(${j.id})">📄 Signed PDF</button>`:''}
         </div>
         <div class="rpt-card-actions">
           ${canEdit()?`<button class="btn btn-sm btn-s" onclick="editJob(${j.id})">Edit</button>`:''}
-          ${canEdit()&&j.status!=='Completed'?`<button class="btn btn-sm btn-s" onclick="updateJobStatus(${j.id})">Update Status</button>`:''}
+          ${canEdit()?`<button class="btn btn-sm btn-s" onclick="updateJobStatus(${j.id})">Update Status</button>`:''}
           ${canDelete()?`<button class="btn btn-sm btn-d" onclick="delJob(${j.id})">Remove</button>`:''}
         </div>
       </div>`).join(''):'<div class="es"><p>No jobs.</p></div>'}
@@ -2422,7 +2422,7 @@ function updateJobStatus(id){
   openModal('Update Status',`<div class="fg"><label>Status</label><select class="fc" id="jSt"><option>Open</option><option>Assigned</option><option>In Progress</option><option>Completed</option><option>Cancelled</option></select></div>`,`<button class="btn btn-s" onclick="closeModal()">Cancel</button><button class="btn btn-p" onclick="saveJobStatus(${id})">Save</button>`);
   document.getElementById('jSt').value=j.status||'Open';
 }
-function saveJobStatus(id){const s=document.getElementById('jSt').value;const i=DB.jobs.findIndex(j=>j.id===id);if(i>=0){DB.jobs[i].status=s;saveDB();}closeModal();renderJobs();updCounts();toast('Status updated','success');}
+function saveJobStatus(id){const s=document.getElementById('jSt').value;const i=DB.jobs.findIndex(j=>j.id===id);if(i>=0){DB.jobs[i].status=s;DB.jobs[i]._modifiedAt=Date.now();markTouched('jobs');saveDB();flushPendingSync();}closeModal();renderJobs();updCounts();toast('Status updated','success');}
 
 // ===== IMPORT AMWAY PDF → AUTO CREATE JOB (Claude AI parsing) =====
 function importAmwayPDF(){
