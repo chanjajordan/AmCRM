@@ -2300,7 +2300,7 @@ function openJobModal(data){
   const draftKey=isEditing?'job_edit_'+data.id:'job_new';
   const d=data||{};
   const custOpts=DB.custs.map(c=>`<option value="${E(c.name)}"${d.customer===c.name?' selected':''}>${E(c.name)}</option>`).join('');
-  const techOpts=DB.techs.map(t=>{const checked=(d.techIds||[]).includes(t.id);return`<label style="display:flex;align-items:center;gap:8px;padding:8px;background:var(--input);border-radius:8px;cursor:pointer"><input type="checkbox" class="jTeChk" value="${t.id}"${checked?' checked':''}><span>${E(t.name)} <span class="muted">— ${E(t.spec)}</span></span></label>`}).join('');
+  const techOpts=DB.techs.map(t=>{const checked=isEditing?(d.techIds||[]).includes(t.id):/siriram/i.test(t.name||'');return`<label style="display:flex;align-items:center;gap:8px;padding:8px;background:var(--input);border-radius:8px;cursor:pointer"><input type="checkbox" class="jTeChk" value="${t.id}"${checked?' checked':''}><span>${E(t.name)} <span class="muted">— ${E(t.spec)}</span></span></label>`}).join('');
   openModal(d.id?'Edit Job':'New Job',
     `<input type="hidden" id="eJId" value="${d.id||''}">
     <input type="hidden" id="jDraftKey" value="${draftKey}">
